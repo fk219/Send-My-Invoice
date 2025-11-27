@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Invoice, Client, Profile, LineItem, InvoiceStatus, TemplateType } from '../types';
-import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar } from 'lucide-react';
 import { CURRENCIES, DEFAULT_LABELS } from '../constants';
 import InvoicePreview from './InvoicePreview';
 import { enhanceDescription, analyzeBrandColors } from '../services/geminiService';
@@ -72,10 +72,24 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
   const [hoveredTemplate, setHoveredTemplate] = useState<TemplateType | null>(null);
   const [loadingAI, setLoadingAI] = useState<string | null>(null);
-  const [analyzingBrand, setAnalyzingBrand] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Toggles for optional fields
+  const [showDiscount, setShowDiscount] = useState(false);
+  const [showTax, setShowTax] = useState(false);
+  const [showShipping, setShowShipping] = useState(false);
+  const [showAmountPaid, setShowAmountPaid] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
+
+  // Initialize toggles based on data
+  useEffect(() => {
+    if (invoiceData.discountValue > 0) setShowDiscount(true);
+    if (invoiceData.taxValue > 0) setShowTax(true);
+    if (invoiceData.shipping > 0) setShowShipping(true);
+    if (invoiceData.amountPaid > 0) setShowAmountPaid(true);
+  }, []);
 
   // Derived invoice state for previewing templates on hover
   const previewInvoice = useMemo(() => ({
@@ -131,7 +145,6 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
   const handleGenerateStripeLink = () => {
     setIsGeneratingLink(true);
-    // Simulate network request to create a Checkout Session
     setTimeout(() => {
       const fakeLink = `https://checkout.stripe.com/pay/inv_${Math.random().toString(36).substr(2, 10)}`;
       setInvoiceData({ ...invoiceData, paymentLink: fakeLink });
@@ -147,8 +160,11 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     }
   }
 
+  const resetLabels = () => {
+    setInvoiceData({ ...invoiceData, labels: DEFAULT_LABELS });
+  };
+
   const handleDownloadPDF = async () => {
-    // Target the dedicated, off-screen container for PDF generation
     const element = document.getElementById('pdf-render-container');
     if (!element) {
       console.error("PDF container not found");
@@ -158,22 +174,18 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     setGeneratingPdf(true);
 
     try {
-      // 1. Setup options for html2canvas
-      // We use a high scale for quality, but the element itself is already sized to A4 (794px width at 96dpi)
       const canvas = await html2canvas(element, {
-        scale: 2, // 2x scale for Retina-like sharpness
+        scale: 2,
         useCORS: true,
         logging: false,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: invoiceData.layout === 'landscape' ? 1123 : 794, // Exact A4 pixel dimensions at 96 DPI
+        width: invoiceData.layout === 'landscape' ? 1123 : 794,
         height: invoiceData.layout === 'landscape' ? 794 : 1123,
-        windowWidth: 1600, // Ensure enough "virtual" window width for layout
+        windowWidth: 1600,
       });
 
       const imgData = canvas.toDataURL('image/png');
-
-      // 2. Generate PDF
       const isLandscape = invoiceData.layout === 'landscape';
       const pdf = new jsPDF({
         orientation: isLandscape ? 'l' : 'p',
@@ -181,14 +193,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         format: 'a4'
       });
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // 3. Add Image to PDF
-      // Since our source element is exactly A4 ratio, we can just fit it to the PDF page
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-
-      // 4. Save
+      pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), undefined, 'FAST');
       pdf.save(`${invoiceData.number}.pdf`);
     } catch (err) {
       console.error("PDF Generation failed:", err);
@@ -200,10 +205,19 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
   const client = clients.find(c => c.id === invoiceData.clientId) || { name: '', email: '', address: '', id: '' };
 
+  // Calculations
+  const subtotal = invoiceData.items.reduce((a, i) => a + (i.quantity * i.unitPrice), 0);
+  const discount = showDiscount ? (invoiceData.discountType === 'percent' ? subtotal * (invoiceData.discountValue / 100) : invoiceData.discountValue) : 0;
+  const taxable = subtotal - discount;
+  const tax = showTax ? (invoiceData.taxType === 'percent' ? taxable * (invoiceData.taxValue / 100) : invoiceData.taxValue) : 0;
+  const shipping = showShipping ? (invoiceData.shipping || 0) : 0;
+  const total = taxable + tax + shipping;
+  const balanceDue = total - (showAmountPaid ? (invoiceData.amountPaid || 0) : 0);
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-slate-950 text-white selection:bg-lime-500/30">
       {/* Toolbar */}
-      <div className="h-20 border-b border-white/5 bg-white/[0.02] backdrop-blur-xl px-8 flex items-center justify-between flex-shrink-0 z-20 relative">
+      <div className="h-20 border-b border-white/5 bg-slate-900/50 backdrop-blur-xl px-8 flex items-center justify-between flex-shrink-0 z-20 relative">
         <div className="flex items-center gap-4">
           <button onClick={onCancel} className="text-slate-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
             <ArrowLeft size={20} />
@@ -239,42 +253,38 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       <div className="flex-1 overflow-hidden flex flex-col lg:flex-row relative">
 
         {/* Editor Form (Left) */}
-        <div className="w-full lg:w-1/2 overflow-y-auto p-8 bg-transparent border-r border-white/5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        <div className="w-full lg:w-1/2 overflow-y-auto p-6 lg:p-10 bg-slate-900/50 backdrop-blur-xl border-r border-white/5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
           <div className="space-y-8 max-w-2xl mx-auto">
 
-            {/* Template Selection */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
+            {/* Template & Brand Card */}
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
                   <LayoutTemplate size={16} />
-                  Template & Brand
+                  Template & Design
                 </h3>
-                <div className="flex items-center gap-2">
-                  <label className="cursor-pointer text-xs text-slate-400 hover:text-lime-400 font-medium flex items-center gap-2 transition-colors">
-                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                    <Upload size={14} />
-                    Upload Logo
-                  </label>
-                </div>
+                <label className="cursor-pointer text-xs text-slate-400 hover:text-lime-400 font-medium flex items-center gap-2 transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 hover:border-lime-500/30">
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <Upload size={14} />
+                  Upload Logo
+                </label>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Select Template</label>
-                  <div className="relative">
+                  <div className="relative group">
                     <select
                       value={invoiceData.template}
                       onChange={(e) => setInvoiceData({ ...invoiceData, template: e.target.value as TemplateType })}
-                      className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none capitalize"
+                      className="w-full appearance-none bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none capitalize transition-all group-hover:border-white/20"
                     >
                       {(['modern', 'classic', 'minimal', 'bold', 'agency', 'boutique', 'tech', 'finance', 'creative', 'simple'] as TemplateType[]).map(t => (
                         <option key={t} value={t} className="bg-slate-900 capitalize">{t} Template</option>
                       ))}
                     </select>
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <ChevronDown size={14} />
                     </div>
                   </div>
                 </div>
@@ -303,108 +313,98 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
               </div>
             </div>
 
-            {/* Meta Data */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Invoice Number</label>
-                <input
-                  type="text"
-                  value={invoiceData.number}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, number: e.target.value })}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none font-mono"
-                />
-              </div>
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Client</label>
-                <select
-                  value={invoiceData.clientId}
-                  onChange={handleClientChange}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
-                >
-                  {clients.map(c => <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>)}
-                </select>
-              </div>
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Issue Date</label>
-                <input
-                  type="date"
-                  value={invoiceData.issueDate}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, issueDate: e.target.value })}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
-                />
-              </div>
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Due Date</label>
-                <input
-                  type="date"
-                  value={invoiceData.dueDate}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value })}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6 mt-6">
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">PO Number</label>
-                <input
-                  type="text"
-                  value={invoiceData.poNumber || ''}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, poNumber: e.target.value })}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
-                />
-              </div>
-              <div className="group">
-                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Currency</label>
-                <select
-                  value={invoiceData.currency}
-                  onChange={(e) => setInvoiceData({ ...invoiceData, currency: e.target.value })}
-                  className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
-                >
-                  {CURRENCIES.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} - {c.name}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-8" />
-
-            {/* Labels Editing */}
-            <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-4">
-                <SettingsIcon size={16} />
-                Customize Labels
+            {/* Invoice Details Card */}
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <FileText size={16} />
+                Invoice Details
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {Object.entries(invoiceData.labels || DEFAULT_LABELS).map(([key, value]) => (
-                  <div key={key} className="group">
-                    <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </label>
-                    <input
-                      type="text"
-                      value={value}
-                      onChange={(e) => setInvoiceData({
-                        ...invoiceData,
-                        labels: { ...invoiceData.labels, [key]: e.target.value }
-                      })}
-                      className="w-full rounded-lg bg-black/20 border border-white/10 p-2 text-xs text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
-                    />
+              <div className="grid grid-cols-2 gap-6">
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Invoice Number</label>
+                  <input
+                    type="text"
+                    value={invoiceData.number}
+                    onChange={(e) => setInvoiceData({ ...invoiceData, number: e.target.value })}
+                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none font-mono"
+                  />
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Client</label>
+                  <div className="relative">
+                    <select
+                      value={invoiceData.clientId}
+                      onChange={handleClientChange}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
+                    >
+                      {clients.map(c => <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
+                    </div>
                   </div>
-                ))}
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Issue Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={invoiceData.issueDate}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, issueDate: e.target.value })}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Due Date</label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={invoiceData.dueDate}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value })}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">PO Number</label>
+                  <input
+                    type="text"
+                    value={invoiceData.poNumber || ''}
+                    onChange={(e) => setInvoiceData({ ...invoiceData, poNumber: e.target.value })}
+                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Currency</label>
+                  <div className="relative">
+                    <select
+                      value={invoiceData.currency}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, currency: e.target.value })}
+                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
+                    >
+                      {CURRENCIES.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} - {c.name}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-8" />
-
-            {/* Line Items */}
-            <div>
-              <h3 className="font-display font-medium text-white text-lg mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-lime-500 rounded-full"></span>
+            {/* Line Items Card */}
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <span className="w-1 h-4 bg-lime-500 rounded-full"></span>
                 Line Items
               </h3>
               <div className="space-y-3">
                 {invoiceData.items.map((item, index) => (
-                  <div key={item.id} className="flex gap-3 items-start bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
+                  <div key={item.id} className="flex gap-3 items-start bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
                     <div className="flex-1 space-y-3">
                       <div className="flex gap-2">
                         <input
@@ -467,52 +467,268 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
               </div>
               <button
                 onClick={addItem}
-                className="mt-4 flex items-center gap-2 text-sm font-medium text-lime-400 hover:text-lime-300 transition-colors px-2 py-1 rounded hover:bg-lime-400/10"
+                className="mt-4 flex items-center gap-2 text-sm font-medium text-lime-400 hover:text-lime-300 transition-colors px-3 py-2 rounded-lg hover:bg-lime-400/10 border border-transparent hover:border-lime-400/20"
               >
                 <Plus size={16} />
                 Add Line Item
               </button>
             </div>
 
-            <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent my-8" />
+            {/* Totals & Configuration Card */}
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <DollarSign size={16} />
+                Totals & Adjustments
+              </h3>
 
-            {/* Payment & Notes */}
-            <div className="space-y-8">
+              <div className="space-y-6">
+                {/* Subtotal */}
+                <div className="flex justify-between text-sm text-slate-400">
+                  <span>Subtotal</span>
+                  <span className="font-mono text-white">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format(subtotal)}
+                  </span>
+                </div>
 
-              {/* Payment Link Section */}
-              <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard size={16} />
-                    Payment Integration
-                  </h3>
-                  {profile.defaultPaymentLink && !invoiceData.paymentLink && (
-                    <button
-                      onClick={() => setInvoiceData({ ...invoiceData, paymentLink: profile.defaultPaymentLink })}
-                      className="text-xs text-slate-400 hover:text-white font-medium transition-colors"
-                    >
-                      Use Default Link
-                    </button>
+                {/* Discount Toggle & Input */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowDiscount(!showDiscount)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${showDiscount ? 'bg-lime-500' : 'bg-white/10'}`}
+                      >
+                        <div className={`w-3 h-3 rounded-full bg-white absolute top-1 transition-all ${showDiscount ? 'left-6' : 'left-1'}`} />
+                      </button>
+                      <span className="text-sm text-slate-300">Add Discount</span>
+                    </div>
+                  </div>
+                  {showDiscount && (
+                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                      <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
+                        <button
+                          onClick={() => setInvoiceData({ ...invoiceData, discountType: 'percent' })}
+                          className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${invoiceData.discountType === 'percent' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          %
+                        </button>
+                        <button
+                          onClick={() => setInvoiceData({ ...invoiceData, discountType: 'amount' })}
+                          className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${invoiceData.discountType === 'amount' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          $
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={invoiceData.discountValue}
+                        onChange={(e) => setInvoiceData({ ...invoiceData, discountValue: parseFloat(e.target.value) })}
+                        className="flex-1 rounded-lg bg-transparent border-none p-2 text-sm text-white focus:ring-0 outline-none text-right font-mono"
+                        placeholder="0"
+                      />
+                    </div>
                   )}
                 </div>
 
+                {/* Tax Toggle & Input */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowTax(!showTax)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${showTax ? 'bg-lime-500' : 'bg-white/10'}`}
+                      >
+                        <div className={`w-3 h-3 rounded-full bg-white absolute top-1 transition-all ${showTax ? 'left-6' : 'left-1'}`} />
+                      </button>
+                      <span className="text-sm text-slate-300">Add Tax</span>
+                    </div>
+                  </div>
+                  {showTax && (
+                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                      <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
+                        <button
+                          onClick={() => setInvoiceData({ ...invoiceData, taxType: 'percent' })}
+                          className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${invoiceData.taxType === 'percent' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          %
+                        </button>
+                        <button
+                          onClick={() => setInvoiceData({ ...invoiceData, taxType: 'amount' })}
+                          className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${invoiceData.taxType === 'amount' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                          $
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={invoiceData.taxValue}
+                        onChange={(e) => setInvoiceData({ ...invoiceData, taxValue: parseFloat(e.target.value) })}
+                        className="flex-1 rounded-lg bg-transparent border-none p-2 text-sm text-white focus:ring-0 outline-none text-right font-mono"
+                        placeholder="0"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Shipping Toggle & Input */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowShipping(!showShipping)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${showShipping ? 'bg-lime-500' : 'bg-white/10'}`}
+                      >
+                        <div className={`w-3 h-3 rounded-full bg-white absolute top-1 transition-all ${showShipping ? 'left-6' : 'left-1'}`} />
+                      </button>
+                      <span className="text-sm text-slate-300">Add Shipping</span>
+                    </div>
+                  </div>
+                  {showShipping && (
+                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                      <span className="text-xs font-bold text-slate-500 px-2">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={invoiceData.shipping}
+                        onChange={(e) => setInvoiceData({ ...invoiceData, shipping: parseFloat(e.target.value) })}
+                        className="flex-1 rounded-lg bg-transparent border-none p-2 text-sm text-white focus:ring-0 outline-none text-right font-mono"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Amount Paid Toggle & Input */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowAmountPaid(!showAmountPaid)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${showAmountPaid ? 'bg-lime-500' : 'bg-white/10'}`}
+                      >
+                        <div className={`w-3 h-3 rounded-full bg-white absolute top-1 transition-all ${showAmountPaid ? 'left-6' : 'left-1'}`} />
+                      </button>
+                      <span className="text-sm text-slate-300">Amount Paid</span>
+                    </div>
+                  </div>
+                  {showAmountPaid && (
+                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                      <span className="text-xs font-bold text-slate-500 px-2">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={invoiceData.amountPaid}
+                        onChange={(e) => setInvoiceData({ ...invoiceData, amountPaid: parseFloat(e.target.value) })}
+                        className="flex-1 rounded-lg bg-transparent border-none p-2 text-sm text-white focus:ring-0 outline-none text-right font-mono"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Final Totals */}
+                <div className="pt-6 border-t border-white/10 space-y-3">
+                  <div className="flex justify-between font-bold text-2xl text-white">
+                    <span className="font-display tracking-wide">Total</span>
+                    <span className="text-lime-400 font-mono">
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format(total)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-red-400 font-medium pt-2 border-t border-white/5">
+                    <span>Balance Due</span>
+                    <span className="font-mono">
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format(balanceDue)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Collapsible Labels Section */}
+            <div className="bg-white/[0.03] rounded-2xl border border-white/5 overflow-hidden">
+              <button
+                onClick={() => setShowLabels(!showLabels)}
+                className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
+              >
+                <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
+                  <Palette size={16} />
+                  Customize Labels
+                </h3>
+                <div className="text-slate-400">
+                  {showLabels ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </div>
+              </button>
+
+              {showLabels && (
+                <div className="p-6 pt-0 border-t border-white/5 animate-in slide-in-from-top-2">
+                  <div className="flex justify-end mb-4">
+                    <button
+                      onClick={resetLabels}
+                      className="text-[10px] uppercase font-bold text-slate-500 hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <RotateCcw size={12} />
+                      Reset to Defaults
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(invoiceData.labels || DEFAULT_LABELS).map(([key, value]) => (
+                      <div key={key} className="group">
+                        <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </label>
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) => setInvoiceData({
+                            ...invoiceData,
+                            labels: { ...invoiceData.labels, [key]: e.target.value }
+                          })}
+                          className="w-full rounded-lg bg-black/20 border border-white/10 p-2 text-xs text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Payment & Notes Card */}
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard size={16} />
+                  Payment & Notes
+                </h3>
+                {profile.defaultPaymentLink && !invoiceData.paymentLink && (
+                  <button
+                    onClick={() => setInvoiceData({ ...invoiceData, paymentLink: profile.defaultPaymentLink })}
+                    className="text-xs text-slate-400 hover:text-white font-medium transition-colors"
+                  >
+                    Use Default Link
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-6">
                 {!invoiceData.paymentLink ? (
-                  <div className="text-center p-8 bg-black/20 rounded-xl border border-white/5 border-dashed group hover:border-white/10 transition-colors">
-                    <p className="text-sm text-slate-400 mb-4 font-light">Accept payments online securely via Stripe.</p>
+                  <div className="text-center p-6 bg-black/20 rounded-xl border border-white/5 border-dashed group hover:border-white/10 transition-colors">
+                    <p className="text-xs text-slate-400 mb-4 font-light">Accept payments online securely via Stripe.</p>
                     <button
                       onClick={handleGenerateStripeLink}
                       disabled={isGeneratingLink}
-                      className="bg-white text-slate-950 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-200 flex items-center gap-2 mx-auto disabled:opacity-70 shadow-lg transition-all"
+                      className="bg-white text-slate-950 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-slate-200 flex items-center gap-2 mx-auto disabled:opacity-70 shadow-lg transition-all"
                     >
                       {isGeneratingLink ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                          Creating Session...
+                          <div className="w-3 h-3 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                          Creating...
                         </>
                       ) : (
                         <>
-                          <CreditCard size={16} />
-                          Create Stripe Checkout Link
+                          <CreditCard size={14} />
+                          Create Payment Link
                         </>
                       )}
                     </button>
@@ -538,14 +754,9 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                         {copiedLink ? <Check size={16} /> : <Copy size={16} />}
                       </button>
                     </div>
-                    <p className="text-[10px] text-lime-500/70 uppercase tracking-wider">
-                      This link will be embedded in the invoice PDF.
-                    </p>
                   </div>
                 )}
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Notes / Terms</label>
                   <textarea
@@ -553,142 +764,19 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
                     rows={4}
                     placeholder="e.g. Payment due within 14 days. Thank you!"
-                    className="w-full rounded-xl bg-white/5 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none placeholder:text-slate-600"
+                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none placeholder:text-slate-600"
                   />
-                </div>
-              </div>
-              <div className="space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10 h-fit backdrop-blur-sm">
-
-                {/* Discount */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Discount</label>
-                    <div className="flex bg-black/40 rounded-lg p-0.5 border border-white/10">
-                      <button
-                        onClick={() => setInvoiceData({ ...invoiceData, discountType: 'percent' })}
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${invoiceData.discountType === 'percent' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        %
-                      </button>
-                      <button
-                        onClick={() => setInvoiceData({ ...invoiceData, discountType: 'amount' })}
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${invoiceData.discountType === 'amount' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        $
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    value={invoiceData.discountValue}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, discountValue: parseFloat(e.target.value) })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none text-right"
-                  />
-                </div>
-
-                {/* Tax */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Tax</label>
-                    <div className="flex bg-black/40 rounded-lg p-0.5 border border-white/10">
-                      <button
-                        onClick={() => setInvoiceData({ ...invoiceData, taxType: 'percent' })}
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${invoiceData.taxType === 'percent' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        %
-                      </button>
-                      <button
-                        onClick={() => setInvoiceData({ ...invoiceData, taxType: 'amount' })}
-                        className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${invoiceData.taxType === 'amount' ? 'bg-lime-400 text-slate-950' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        $
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    type="number"
-                    min="0"
-                    value={invoiceData.taxValue}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, taxValue: parseFloat(e.target.value) })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none text-right"
-                  />
-                </div>
-
-                {/* Shipping */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Shipping</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={invoiceData.shipping}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, shipping: parseFloat(e.target.value) })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none text-right"
-                  />
-                </div>
-
-                {/* Amount Paid */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Amount Paid</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={invoiceData.amountPaid}
-                    onChange={(e) => setInvoiceData({ ...invoiceData, amountPaid: parseFloat(e.target.value) })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none text-right"
-                  />
-                </div>
-
-                {/* Totals Display */}
-                <div className="pt-4 border-t border-white/10 space-y-2">
-                  <div className="flex justify-between text-sm text-slate-400 font-light">
-                    <span>Subtotal</span>
-                    <span className="font-mono">
-                      <span className="font-mono">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format(invoiceData.items.reduce((a, i) => a + (i.quantity * i.unitPrice), 0))}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold text-2xl text-white pt-2">
-                    <span className="font-display tracking-wide">Total</span>
-                    <span className="text-lime-400 font-mono">
-                      <span className="text-lime-400 font-mono">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format((() => {
-                          const subtotal = invoiceData.items.reduce((a, i) => a + (i.quantity * i.unitPrice), 0);
-                          const discount = invoiceData.discountType === 'percent' ? subtotal * (invoiceData.discountValue / 100) : invoiceData.discountValue;
-                          const taxable = subtotal - discount;
-                          const tax = invoiceData.taxType === 'percent' ? taxable * (invoiceData.taxValue / 100) : invoiceData.taxValue;
-                          const total = taxable + tax + (invoiceData.shipping || 0);
-                          return total;
-                        })())}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm text-red-400 font-medium pt-2 border-t border-white/5">
-                    <span>Balance Due</span>
-                    <span className="font-mono">
-                      <span className="font-mono">
-                        {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format((() => {
-                          const subtotal = invoiceData.items.reduce((a, i) => a + (i.quantity * i.unitPrice), 0);
-                          const discount = invoiceData.discountType === 'percent' ? subtotal * (invoiceData.discountValue / 100) : invoiceData.discountValue;
-                          const taxable = subtotal - discount;
-                          const tax = invoiceData.taxType === 'percent' ? taxable * (invoiceData.taxValue / 100) : invoiceData.taxValue;
-                          const total = taxable + tax + (invoiceData.shipping || 0);
-                          return total - (invoiceData.amountPaid || 0);
-                        })())}
-                      </span>
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
 
         {/* Live Preview (Right) */}
         <div className="hidden lg:flex w-1/2 bg-black/20 overflow-y-auto flex-col items-center relative py-12 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-          <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-slate-300 text-[10px] font-bold shadow-lg uppercase tracking-widest border border-white/10 mb-8">
+          <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-slate-300 text-[10px] font-bold shadow-lg uppercase tracking-widest border border-white/10 mb-8 flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${generatingPdf ? 'bg-yellow-500 animate-pulse' : 'bg-lime-500'}`}></div>
             {hoveredTemplate ? `Previewing: ${hoveredTemplate}` : 'Live Preview'}
           </div>
 
@@ -696,7 +784,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             {/* ID used for HTML2Canvas */}
             <div
               id="invoice-preview-container"
-              className={`bg-white flex flex-col shadow-sm transition-all duration-300 ${invoiceData.layout === 'landscape' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'}`}
+              className={`bg-white flex flex-col shadow-2xl transition-all duration-300 ${invoiceData.layout === 'landscape' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'}`}
             >
               <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
             </div>
@@ -705,7 +793,6 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       </div>
 
       {/* Hidden Container for Pixel-Perfect PDF Generation */}
-      {/* This container is positioned off-screen but rendered at full A4 size (96 DPI) to ensure html2canvas captures it correctly without scaling artifacts. */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0, overflow: 'hidden' }}>
         <div
           id="pdf-render-container"
