@@ -98,7 +98,7 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
 
          {/* Summaries */}
          <div className="flex justify-end mb-12">
-            <div className="w-64 space-y-3">
+            <div className="w-72 space-y-3 bg-slate-50 p-6 rounded-xl">
                <div className="flex justify-between text-sm text-slate-600">
                   <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
                   <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
@@ -840,8 +840,8 @@ export const BoutiqueTemplate = ({ invoice, client, profile, totals }: TemplateP
 export const TechTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
    <div className={`w-full min-h-full p-12 bg-slate-900 text-cyan-400 font-mono ${getFontClass(profile.fontFamily, 'font-mono')}`}>
       <div className="border border-cyan-500/30 p-8 h-full relative overflow-hidden">
-         <div className="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
-            <div className="text-[10rem] font-black leading-none text-cyan-500">INV</div>
+         <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+            <div className="text-[12rem] font-black leading-none text-cyan-500">INV</div>
          </div>
 
          <div className="relative z-10">
@@ -1006,7 +1006,7 @@ export const FinanceTemplate = ({ invoice, client, profile, totals }: TemplatePr
                   <td className="py-4 px-4 font-medium">{item.description}</td>
                   <td className="py-4 px-4 text-center text-slate-600">{item.quantity}</td>
                   <td className="py-4 px-4 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                  <td className="py-4 px-4 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
+                  <td className="py-5 px-4 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                </tr>
             ))}
          </tbody>

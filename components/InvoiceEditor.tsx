@@ -148,71 +148,32 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
   }
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('invoice-preview-container');
-    if (!element) return;
+    // Target the dedicated, off-screen container for PDF generation
+    const element = document.getElementById('pdf-render-container');
+    if (!element) {
+      console.error("PDF container not found");
+      return;
+    }
 
     setGeneratingPdf(true);
 
     try {
-      // 1. Clone the node to remove transforms (scaling) which confuses html2canvas
-      const clone = element.cloneNode(true) as HTMLElement;
-
-      // 2. Pre-process clone: Ensure all images are fully loaded to avoid blank spots
-      const images = clone.getElementsByTagName('img');
-      await Promise.all(Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      }));
-
-      // 3. Setup container
-      const container = document.createElement('div');
-      container.style.position = 'fixed';
-      container.style.top = '-10000px';
-      container.style.left = '0';
-      container.style.width = '210mm'; // Standard A4 width
-      container.style.height = 'auto'; // Allow height to expand for multi-page content
-      container.appendChild(clone);
-      document.body.appendChild(container);
-
-      // --- LINK DETECTION ---
-      // We need to find where the "Pay Invoice" link is in the DOM so we can overlay a PDF link annotation later.
-      const linkElements = clone.querySelectorAll('[data-pdf-link="true"]');
-      const linkRects: { x: number, y: number, w: number, h: number, url: string }[] = [];
-
-      const cloneRect = clone.getBoundingClientRect();
-
-      linkElements.forEach(el => {
-        const rect = el.getBoundingClientRect();
-        // Calculate relative position inside the captured area
-        linkRects.push({
-          x: rect.left - cloneRect.left,
-          y: rect.top - cloneRect.top,
-          w: rect.width,
-          h: rect.height,
-          url: (el as HTMLAnchorElement).href
-        });
-      });
-
-      // 4. Generate canvas from the clean clone
-      const canvas = await html2canvas(clone, {
-        scale: 2, // High res
+      // 1. Setup options for html2canvas
+      // We use a high scale for quality, but the element itself is already sized to A4 (794px width at 96dpi)
+      const canvas = await html2canvas(element, {
+        scale: 2, // 2x scale for Retina-like sharpness
         useCORS: true,
         logging: false,
         allowTaint: true,
-        backgroundColor: '#ffffff', // Force white background
-        width: 794, // A4 width in px at 96 DPI
-        windowWidth: 1200
+        backgroundColor: '#ffffff',
+        width: invoiceData.layout === 'landscape' ? 1123 : 794, // Exact A4 pixel dimensions at 96 DPI
+        height: invoiceData.layout === 'landscape' ? 794 : 1123,
+        windowWidth: 1600, // Ensure enough "virtual" window width for layout
       });
-
-      // 5. Cleanup DOM
-      document.body.removeChild(container);
 
       const imgData = canvas.toDataURL('image/png');
 
-      // 6. Generate PDF
+      // 2. Generate PDF
       const isLandscape = invoiceData.layout === 'landscape';
       const pdf = new jsPDF({
         orientation: isLandscape ? 'l' : 'p',
@@ -223,59 +184,15 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      // 3. Add Image to PDF
+      // Since our source element is exactly A4 ratio, we can just fit it to the PDF page
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
-      const layoutWidthPx = cloneRect.width;
-      const pxToMm = pdfWidth / layoutWidthPx;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-      let pageNumber = 1;
-
-      // Add First Page
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-
-      const addLinksToPage = (pageOffsetMm: number) => {
-        linkRects.forEach(link => {
-          // Convert DOM Layout Px coordinates to PDF Mm
-          const linkYMm = link.y * pxToMm;
-          const linkXMm = link.x * pxToMm;
-          const linkHMm = link.h * pxToMm;
-          const linkWMm = link.w * pxToMm;
-
-          // Check if link falls on this page
-          // Current page covers [pageOffsetMm, pageOffsetMm + pdfHeight]
-          if (linkYMm >= pageOffsetMm && linkYMm < (pageOffsetMm + pdfHeight)) {
-            // Calculate relative Y on this specific page
-            const relativeY = linkYMm - pageOffsetMm;
-            // Add link annotation
-            pdf.link(linkXMm, relativeY, linkWMm, linkHMm, { url: link.url });
-          }
-        });
-      }
-
-      addLinksToPage(0);
-      heightLeft -= pdfHeight;
-
-      // Add Subsequent Pages
-      // Tolerance of 2mm to avoid blank pages due to rounding errors
-      while (heightLeft >= 2) {
-        position = position - pdfHeight;
-        pdf.addPage();
-        pageNumber++;
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-
-        // The offset for page N is (N-1) * pdfHeight
-        addLinksToPage((pageNumber - 1) * pdfHeight);
-
-        heightLeft -= pdfHeight;
-      }
-
+      // 4. Save
       pdf.save(`${invoiceData.number}.pdf`);
     } catch (err) {
       console.error("PDF Generation failed:", err);
-      alert(`PDF Generation failed: ${err instanceof Error ? err.message : 'Unknown error'}. Please ensure images are accessible.`);
+      alert(`PDF Generation failed: ${err instanceof Error ? err.message : 'Unknown error'}.`);
     } finally {
       setGeneratingPdf(false);
     }
@@ -341,60 +258,47 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(['modern', 'classic', 'minimal', 'bold', 'agency', 'boutique', 'tech', 'finance', 'creative', 'simple'] as TemplateType[]).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setInvoiceData({ ...invoiceData, template: t })}
-                    onMouseEnter={() => setHoveredTemplate(t)}
-                    onMouseLeave={() => setHoveredTemplate(null)}
-                    className={`relative px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left group overflow-hidden ${invoiceData.template === t
-                      ? 'border-lime-500/50 bg-lime-500/10 text-lime-400 ring-1 ring-lime-500/20 shadow-[0_0_15px_rgba(132,204,22,0.1)]'
-                      : 'border-white/5 bg-white/[0.02] text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-slate-200'
-                      }`}
-                  >
-                    <div className="flex justify-between items-center mb-2 relative z-10">
-                      <span className="capitalize font-display tracking-wide">{t}</span>
-                      {invoiceData.template === t && <Check size={14} className="text-lime-400" />}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Select Template</label>
+                  <div className="relative">
+                    <select
+                      value={invoiceData.template}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, template: e.target.value as TemplateType })}
+                      className="w-full appearance-none bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none capitalize"
+                    >
+                      {(['modern', 'classic', 'minimal', 'bold', 'agency', 'boutique', 'tech', 'finance', 'creative', 'simple'] as TemplateType[]).map(t => (
+                        <option key={t} value={t} className="bg-slate-900 capitalize">{t} Template</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     </div>
-                    <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden relative z-10">
-                      <div
-                        className={`h-full transition-all duration-300 ${t === 'modern' ? 'w-2/3 bg-slate-400' :
-                          t === 'bold' ? 'w-full bg-indigo-500' :
-                            t === 'agency' ? 'w-full bg-zinc-600' :
-                              t === 'boutique' ? 'w-full border-b border-white/50' :
-                                t === 'minimal' ? 'w-1/3 border border-white/30' :
-                                  t === 'tech' ? 'w-full bg-cyan-900 border-b-2 border-cyan-500' :
-                                    t === 'finance' ? 'w-full border-t-4 border-blue-900 bg-white/10' :
-                                      t === 'creative' ? 'w-1/2 bg-orange-400 rounded-r-lg' :
-                                        t === 'simple' ? 'w-full border-t border-slate-500' :
-                                          'w-1/2 bg-orange-100'
-                          }`}
-                        style={t === 'bold' ? { backgroundColor: profile.brandColor } : {}}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: profile.brandColor, color: profile.brandColor }}></div>
-                  <span className="font-light tracking-wide">Brand Color Active</span>
+                  </div>
                 </div>
 
-                <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
-                  <button
-                    onClick={() => setInvoiceData({ ...invoiceData, layout: 'portrait' })}
-                    className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'portrait' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    Portrait
-                  </button>
-                  <button
-                    onClick={() => setInvoiceData({ ...invoiceData, layout: 'landscape' })}
-                    className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'landscape' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    Landscape
-                  </button>
+                <div className="flex items-center justify-between border-t border-white/5 pt-4">
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: profile.brandColor, color: profile.brandColor }}></div>
+                    <span className="font-light tracking-wide">Brand Color Active</span>
+                  </div>
+
+                  <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
+                    <button
+                      onClick={() => setInvoiceData({ ...invoiceData, layout: 'portrait' })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'portrait' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      Portrait
+                    </button>
+                    <button
+                      onClick={() => setInvoiceData({ ...invoiceData, layout: 'landscape' })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'landscape' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      Landscape
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -797,6 +701,23 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           >
             <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
           </div>
+        </div>
+      </div>
+
+      {/* Hidden Container for Pixel-Perfect PDF Generation */}
+      {/* This container is positioned off-screen but rendered at full A4 size (96 DPI) to ensure html2canvas captures it correctly without scaling artifacts. */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0, overflow: 'hidden' }}>
+        <div
+          id="pdf-render-container"
+          style={{
+            width: invoiceData.layout === 'landscape' ? '1123px' : '794px', // A4 width at 96 DPI
+            minHeight: invoiceData.layout === 'landscape' ? '794px' : '1123px', // A4 height at 96 DPI
+            backgroundColor: 'white',
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          <InvoicePreview invoice={invoiceData} client={client} profile={profile} />
         </div>
       </div>
 
