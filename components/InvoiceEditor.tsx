@@ -685,21 +685,21 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           </div>
 
         </div>
-      </div>
 
-      {/* Live Preview (Right) */}
-      <div className="hidden lg:flex w-1/2 bg-black/20 overflow-y-auto flex-col items-center relative py-12 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-        <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-slate-300 text-[10px] font-bold shadow-lg uppercase tracking-widest border border-white/10 mb-8">
-          {hoveredTemplate ? `Previewing: ${hoveredTemplate}` : 'Live Preview'}
-        </div>
+        {/* Live Preview (Right) */}
+        <div className="hidden lg:flex w-1/2 bg-black/20 overflow-y-auto flex-col items-center relative py-12 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-slate-300 text-[10px] font-bold shadow-lg uppercase tracking-widest border border-white/10 mb-8">
+            {hoveredTemplate ? `Previewing: ${hoveredTemplate}` : 'Live Preview'}
+          </div>
 
-        <div className="origin-top transform scale-[0.65] xl:scale-[0.75] 2xl:scale-[0.85] transition-transform duration-300 shadow-[0_0_50px_rgba(0,0,0,0.5)] mb-24">
-          {/* ID used for HTML2Canvas */}
-          <div
-            id="invoice-preview-container"
-            className={`bg-white flex flex-col shadow-sm transition-all duration-300 ${invoiceData.layout === 'landscape' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'}`}
-          >
-            <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
+          <div className="origin-top transform scale-[0.65] xl:scale-[0.75] 2xl:scale-[0.85] transition-transform duration-300 shadow-[0_0_50px_rgba(0,0,0,0.5)] mb-24">
+            {/* ID used for HTML2Canvas */}
+            <div
+              id="invoice-preview-container"
+              className={`bg-white flex flex-col shadow-sm transition-all duration-300 ${invoiceData.layout === 'landscape' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'}`}
+            >
+              <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
+            </div>
           </div>
         </div>
       </div>
