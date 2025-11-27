@@ -784,7 +784,11 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             {/* ID used for HTML2Canvas */}
             <div
               id="invoice-preview-container"
-              className={`bg-white flex flex-col shadow-2xl transition-all duration-300 ${invoiceData.layout === 'landscape' ? 'w-[297mm] min-h-[210mm]' : 'w-[210mm] min-h-[297mm]'}`}
+              className="bg-white flex flex-col shadow-2xl transition-all duration-300"
+              style={{
+                width: invoiceData.layout === 'landscape' ? '1123px' : '794px',
+                minHeight: invoiceData.layout === 'landscape' ? '794px' : '1123px'
+              }}
             >
               <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
             </div>

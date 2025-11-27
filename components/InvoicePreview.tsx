@@ -44,7 +44,7 @@ export default function InvoicePreview({ invoice, client, profile }: InvoicePrev
   };
 
   return (
-    <div className="w-full h-full min-h-[297mm]">
+    <div className={`w-full h-full ${invoice.layout === 'landscape' ? 'min-h-[210mm]' : 'min-h-[297mm]'}`}>
       {renderTemplate()}
     </div>
   );
