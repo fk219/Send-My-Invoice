@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Profile } from '../types';
 import { Save, CreditCard, Hash, Globe, Sparkles, Type, Palette, Layout, AlertCircle, Upload } from 'lucide-react';
 import { analyzeBrandColors } from '../services/geminiService';
+import { GOOGLE_FONTS } from '../constants';
 
 interface SettingsProps {
    profile: Profile;
@@ -109,21 +110,33 @@ export default function Settings({ profile, setProfile }: SettingsProps) {
                                  name="brandColor"
                                  value={profile.brandColor}
                                  onChange={handleColorChange}
-                                 className="w-full pl-12 bg-white/5 border border-white/10 rounded-xl p-2.5 text-sm font-mono text-white focus:border-lime-500 focus:ring-1 focus:ring-lime-500 outline-none transition-all"
+                                 className="w-full pl-12 bg-white/5 border border-white/10 rounded-xl p-2.5 text-sm font-mono text-white focus:border-lime-500 focus:ring-1 focus:ring-lime-500 outline-none transition-all uppercase"
                                  placeholder="#000000"
                               />
                            </div>
-                           <div className="relative w-12 h-11 overflow-hidden rounded-xl border border-white/10 shadow-sm cursor-pointer hover:border-lime-500/50 transition-colors">
+                           <div className="relative w-12 h-11 overflow-hidden rounded-xl border border-white/10 shadow-sm cursor-pointer hover:border-lime-500/50 transition-colors group">
                               <input
                                  type="color"
                                  value={profile.brandColor.startsWith('#') ? profile.brandColor : '#000000'}
                                  onChange={handleChange}
                                  name="brandColor"
-                                 className="absolute -top-4 -left-4 w-24 h-24 cursor-pointer p-0 border-0"
+                                 className="absolute -top-4 -left-4 w-24 h-24 cursor-pointer p-0 border-0 opacity-0 group-hover:opacity-100"
                               />
+                              <div className="w-full h-full" style={{ backgroundColor: profile.brandColor }}></div>
                            </div>
                         </div>
-                        <p className="text-[10px] text-slate-500 mt-2 font-mono">HEX, RGB, HSL supported.</p>
+                        <div className="flex gap-2 mt-2">
+                           {['#84cc16', '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#ef4444'].map(color => (
+                              <button
+                                 key={color}
+                                 onClick={() => setProfile({ ...profile, brandColor: color })}
+                                 className={`w-6 h-6 rounded-full border border-white/10 hover:scale-110 transition-transform ${profile.brandColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                                 style={{ backgroundColor: color }}
+                                 title={color}
+                              />
+                           ))}
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-2 font-mono">Supports HEX, RGB, HSL.</p>
                      </div>
 
                      <div>
@@ -133,13 +146,18 @@ export default function Settings({ profile, setProfile }: SettingsProps) {
                         </label>
                         <select
                            name="fontFamily"
-                           value={profile.fontFamily || 'sans'}
+                           value={profile.fontFamily || 'Inter'}
                            onChange={handleChange}
                            className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:border-lime-500 outline-none appearance-none"
                         >
-                           <option value="sans" className="bg-slate-900">Sans Serif (Clean & Modern)</option>
-                           <option value="serif" className="bg-slate-900">Serif (Elegant & Classic)</option>
-                           <option value="mono" className="bg-slate-900">Monospace (Technical)</option>
+                           <option value="sans" className="bg-slate-900">System Sans</option>
+                           <option value="serif" className="bg-slate-900">System Serif</option>
+                           <option value="mono" className="bg-slate-900">System Mono</option>
+                           <optgroup label="Google Fonts" className="bg-slate-900 text-slate-400">
+                              {GOOGLE_FONTS.map(font => (
+                                 <option key={font} value={font} className="bg-slate-900 text-white">{font}</option>
+                              ))}
+                           </optgroup>
                         </select>
                      </div>
 
@@ -181,9 +199,15 @@ export default function Settings({ profile, setProfile }: SettingsProps) {
                         <input type="text" name="taxId" value={profile.taxId || ''} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none" />
                      </div>
                   </div>
-                  <div>
-                     <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Business Address</label>
-                     <input type="text" name="address" value={profile.address} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Phone Number</label>
+                        <input type="tel" name="phoneNumber" value={profile.phoneNumber || ''} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none" placeholder="+1 (555) 000-0000" />
+                     </div>
+                     <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Business Address</label>
+                        <input type="text" name="address" value={profile.address} onChange={handleChange} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none" />
+                     </div>
                   </div>
                </div>
             </section>

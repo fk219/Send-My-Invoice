@@ -17,6 +17,10 @@ const getFontClass = (family?: 'sans' | 'serif' | 'mono', defaultFamily: string 
    return defaultFamily;
 };
 
+const formatCurrency = (amount: number, currency: string = 'USD') => {
+   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+};
+
 // --- Modern Template ---
 export const ModernTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
    <div className={`w-full min-h-full p-16 flex flex-col justify-between text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
@@ -59,6 +63,12 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Due</h3>
                   <p className="text-sm font-medium">{invoice.dueDate}</p>
                </div>
+               {invoice.poNumber && (
+                  <div className="col-span-2 mt-2">
+                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">{invoice.labels?.poNumber || 'PO Number'}</h3>
+                     <p className="text-sm font-medium">{invoice.poNumber}</p>
+                  </div>
+               )}
             </div>
          </div>
 
@@ -77,9 +87,9 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
                   <tr key={item.id} className="border-b border-slate-50">
                      <td className="py-4 text-sm text-slate-800 font-medium">{item.description}</td>
                      <td className="py-4 text-sm text-slate-600 text-right">{item.quantity}</td>
-                     <td className="py-4 text-sm text-slate-600 text-right">${item.unitPrice.toFixed(2)}</td>
+                     <td className="py-4 text-sm text-slate-600 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                      <td className="py-4 text-sm text-slate-900 font-semibold text-right">
-                        ${(item.quantity * item.unitPrice).toFixed(2)}
+                        {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
                      </td>
                   </tr>
                ))}
@@ -90,16 +100,38 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
          <div className="flex justify-end mb-12">
             <div className="w-64 space-y-3">
                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Subtotal</span>
-                  <span>${totals.subtotal.toFixed(2)}</span>
+                  <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
+                  <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
+               {totals.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-slate-600">
+                     <span>{invoice.labels?.discount || 'Discount'}</span>
+                     <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Tax ({invoice.taxRate}%)</span>
-                  <span>${totals.taxAmount.toFixed(2)}</span>
+                  <span>{invoice.labels?.tax || 'Tax'}</span>
+                  <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
+               {totals.shipping > 0 && (
+                  <div className="flex justify-between text-sm text-slate-600">
+                     <span>{invoice.labels?.shipping || 'Shipping'}</span>
+                     <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-xl font-bold text-slate-900 pt-4 border-t border-slate-200">
-                  <span>Total</span>
-                  <span style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+                  <span>{invoice.labels?.total || 'Total'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               </div>
+               {totals.amountPaid > 0 && (
+                  <div className="flex justify-between text-sm text-slate-600 pt-2">
+                     <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                     <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                  </div>
+               )}
+               <div className="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t border-slate-100">
+                  <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
@@ -111,8 +143,14 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
             <div>
                {invoice.notes && (
                   <div className="mb-6">
-                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Notes</h3>
+                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{invoice.labels?.notes || 'Notes'}</h3>
                      <p className="text-sm text-slate-600 whitespace-pre-wrap max-w-lg">{invoice.notes}</p>
+                  </div>
+               )}
+               {invoice.terms && (
+                  <div className="mb-6">
+                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{invoice.labels?.terms || 'Terms'}</h3>
+                     <p className="text-sm text-slate-600 whitespace-pre-wrap max-w-lg">{invoice.terms}</p>
                   </div>
                )}
                <div className="text-xs text-slate-400">
@@ -206,9 +244,9 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
                   <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                      <td className="py-3 px-4 border-r border-slate-200 text-sm">{item.description}</td>
                      <td className="py-3 px-4 border-r border-slate-200 text-sm text-center">{item.quantity}</td>
-                     <td className="py-3 px-4 border-r border-slate-200 text-sm text-right">${item.unitPrice.toFixed(2)}</td>
+                     <td className="py-3 px-4 border-r border-slate-200 text-sm text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                      <td className="py-3 px-4 text-sm text-right font-medium">
-                        ${(item.quantity * item.unitPrice).toFixed(2)}
+                        {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
                      </td>
                   </tr>
                ))}
@@ -242,19 +280,41 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
          </div>
          <div className="w-1/3">
             <div className="flex justify-between py-2 border-b border-slate-300">
-               <span className="font-bold text-sm">Subtotal:</span>
-               <span className="text-sm">${totals.subtotal.toFixed(2)}</span>
+               <span className="font-bold text-sm">{invoice.labels?.subtotal || 'Subtotal'}:</span>
+               <span className="text-sm">{formatCurrency(totals.subtotal, invoice.currency)}</span>
             </div>
+            {totals.discountAmount > 0 && (
+               <div className="flex justify-between py-2 border-b border-slate-300">
+                  <span className="font-bold text-sm">{invoice.labels?.discount || 'Discount'}:</span>
+                  <span className="text-sm">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+               </div>
+            )}
             <div className="flex justify-between py-2 border-b border-slate-300">
-               <span className="font-bold text-sm">Tax ({invoice.taxRate}%):</span>
-               <span className="text-sm">${totals.taxAmount.toFixed(2)}</span>
+               <span className="font-bold text-sm">{invoice.labels?.tax || 'Tax'}:</span>
+               <span className="text-sm">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
             </div>
+            {totals.shipping > 0 && (
+               <div className="flex justify-between py-2 border-b border-slate-300">
+                  <span className="font-bold text-sm">{invoice.labels?.shipping || 'Shipping'}:</span>
+                  <span className="text-sm">{formatCurrency(totals.shipping, invoice.currency)}</span>
+               </div>
+            )}
             <div
                className="flex justify-between py-3 border-b-4 border-double mt-1"
                style={{ borderColor: profile.brandColor }}
             >
-               <span className="font-bold text-lg">Total:</span>
-               <span className="font-bold text-lg" style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+               <span className="font-bold text-lg">{invoice.labels?.total || 'Total'}:</span>
+               <span className="font-bold text-lg" style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+            </div>
+            {totals.amountPaid > 0 && (
+               <div className="flex justify-between py-2 border-b border-slate-300">
+                  <span className="font-bold text-sm">{invoice.labels?.amountPaid || 'Amount Paid'}:</span>
+                  <span className="text-sm">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+               </div>
+            )}
+            <div className="flex justify-between py-2 border-b border-slate-300">
+               <span className="font-bold text-sm">{invoice.labels?.balanceDue || 'Balance Due'}:</span>
+               <span className="text-sm font-bold">{formatCurrency(totals.balanceDue, invoice.currency)}</span>
             </div>
          </div>
       </div>
@@ -300,7 +360,7 @@ export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplatePr
          </div>
          <div className="col-span-1 text-right">
             <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Total Due</h3>
-            <p className="text-lg font-bold">${totals.total.toFixed(2)}</p>
+            <p className="text-lg font-bold">{formatCurrency(totals.total, invoice.currency)}</p>
          </div>
       </div>
 
@@ -318,8 +378,8 @@ export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplatePr
                <div key={item.id} className="flex text-sm">
                   <div className="flex-1 font-medium">{item.description}</div>
                   <div className="w-20 text-right text-slate-600">{item.quantity}</div>
-                  <div className="w-32 text-right text-slate-600">${item.unitPrice.toFixed(2)}</div>
-                  <div className="w-32 text-right font-semibold">${(item.quantity * item.unitPrice).toFixed(2)}</div>
+                  <div className="w-32 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</div>
+                  <div className="w-32 text-right font-semibold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
                </div>
             ))}
          </div>
@@ -349,16 +409,38 @@ export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplatePr
             </div>
             <div className="w-1/2 max-w-xs ml-auto">
                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-slate-500">Subtotal</span>
-                  <span>${totals.subtotal.toFixed(2)}</span>
+                  <span className="text-slate-500">{invoice.labels?.subtotal || 'Subtotal'}</span>
+                  <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
+               {totals.discountAmount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                     <span className="text-slate-500">{invoice.labels?.discount || 'Discount'}</span>
+                     <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-sm mb-4">
-                  <span className="text-slate-500">Tax {invoice.taxRate}%</span>
-                  <span>${totals.taxAmount.toFixed(2)}</span>
+                  <span className="text-slate-500">{invoice.labels?.tax || 'Tax'}</span>
+                  <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
+               {totals.shipping > 0 && (
+                  <div className="flex justify-between text-sm mb-4">
+                     <span className="text-slate-500">{invoice.labels?.shipping || 'Shipping'}</span>
+                     <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-xl font-bold border-t border-slate-200 pt-4">
-                  <span>Total</span>
-                  <span style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+                  <span>{invoice.labels?.total || 'Total'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               </div>
+               {totals.amountPaid > 0 && (
+                  <div className="flex justify-between text-sm mb-2 pt-2">
+                     <span className="text-slate-500">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                     <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                  </div>
+               )}
+               <div className="flex justify-between text-lg font-bold border-t border-slate-100 pt-2">
+                  <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
@@ -426,8 +508,8 @@ export const BoldTemplate = ({ invoice, client, profile, totals }: TemplateProps
                   <div key={item.id} className="flex py-4 items-center">
                      <div className="flex-1 font-medium text-slate-800">{item.description}</div>
                      <div className="w-24 text-right text-slate-500">{item.quantity}</div>
-                     <div className="w-32 text-right text-slate-500">${item.unitPrice.toFixed(2)}</div>
-                     <div className="w-32 text-right font-bold text-slate-900">${(item.quantity * item.unitPrice).toFixed(2)}</div>
+                     <div className="w-32 text-right text-slate-500">{formatCurrency(item.unitPrice, invoice.currency)}</div>
+                     <div className="w-32 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
                   </div>
                ))}
             </div>
@@ -437,16 +519,38 @@ export const BoldTemplate = ({ invoice, client, profile, totals }: TemplateProps
          <div className="flex justify-end mt-auto">
             <div className="w-1/3 bg-slate-50 p-8 rounded-xl">
                <div className="flex justify-between mb-3 text-slate-600">
-                  <span>Subtotal</span>
-                  <span>${totals.subtotal.toFixed(2)}</span>
+                  <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
+                  <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
+               {totals.discountAmount > 0 && (
+                  <div className="flex justify-between mb-3 text-slate-600">
+                     <span>{invoice.labels?.discount || 'Discount'}</span>
+                     <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between mb-6 text-slate-600">
-                  <span>Tax ({invoice.taxRate}%)</span>
-                  <span>${totals.taxAmount.toFixed(2)}</span>
+                  <span>{invoice.labels?.tax || 'Tax'}</span>
+                  <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
+               {totals.shipping > 0 && (
+                  <div className="flex justify-between mb-6 text-slate-600">
+                     <span>{invoice.labels?.shipping || 'Shipping'}</span>
+                     <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between pt-6 border-t border-slate-200">
-                  <span className="text-xl font-bold text-slate-900">Total</span>
-                  <span className="text-xl font-bold" style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+                  <span className="text-xl font-bold text-slate-900">{invoice.labels?.total || 'Total'}</span>
+                  <span className="text-xl font-bold" style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               </div>
+               {totals.amountPaid > 0 && (
+                  <div className="flex justify-between pt-2 text-slate-600">
+                     <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                     <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                  </div>
+               )}
+               <div className="flex justify-between pt-2 border-t border-slate-100">
+                  <span className="text-lg font-bold text-slate-900">{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                  <span className="text-lg font-bold" style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
@@ -525,7 +629,7 @@ export const AgencyTemplate = ({ invoice, client, profile, totals }: TemplatePro
             <div className="mt-auto">
                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Total Amount</h3>
                <p className="text-5xl font-light tracking-tight" style={{ color: profile.brandColor }}>
-                  ${totals.total.toFixed(2)}
+                  {formatCurrency(totals.total, invoice.currency)}
                </p>
             </div>
          </div>
@@ -546,8 +650,8 @@ export const AgencyTemplate = ({ invoice, client, profile, totals }: TemplatePro
                      <tr key={item.id}>
                         <td className="py-6 pr-4 font-medium text-zinc-300">{item.description}</td>
                         <td className="py-6 text-right text-zinc-500">{item.quantity}</td>
-                        <td className="py-6 text-right text-zinc-500">${item.unitPrice.toFixed(2)}</td>
-                        <td className="py-6 text-right font-bold text-white">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                        <td className="py-6 text-right text-zinc-500">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                        <td className="py-6 text-right font-bold text-white">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                      </tr>
                   ))}
                </tbody>
@@ -556,12 +660,38 @@ export const AgencyTemplate = ({ invoice, client, profile, totals }: TemplatePro
             <div className="mt-12 flex justify-end">
                <div className="w-64">
                   <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-400 text-sm">
-                     <span>Subtotal</span>
-                     <span>${totals.subtotal.toFixed(2)}</span>
+                     <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
+                     <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                   </div>
+                  {totals.discountAmount > 0 && (
+                     <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-400 text-sm">
+                        <span>{invoice.labels?.discount || 'Discount'}</span>
+                        <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                     </div>
+                  )}
                   <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-400 text-sm">
-                     <span>Tax ({invoice.taxRate}%)</span>
-                     <span>${totals.taxAmount.toFixed(2)}</span>
+                     <span>{invoice.labels?.tax || 'Tax'}</span>
+                     <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
+                  </div>
+                  {totals.shipping > 0 && (
+                     <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-400 text-sm">
+                        <span>{invoice.labels?.shipping || 'Shipping'}</span>
+                        <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                     </div>
+                  )}
+                  <div className="flex justify-between py-4 text-xl font-bold text-white">
+                     <span>{invoice.labels?.total || 'Total'}</span>
+                     <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+                  </div>
+                  {totals.amountPaid > 0 && (
+                     <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-400 text-sm">
+                        <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                        <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                     </div>
+                  )}
+                  <div className="flex justify-between py-2 text-lg font-bold text-white">
+                     <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                     <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                   </div>
                </div>
             </div>
@@ -638,8 +768,8 @@ export const BoutiqueTemplate = ({ invoice, client, profile, totals }: TemplateP
                      <tr key={item.id} className="border-b border-slate-100/50">
                         <td className="py-4 pr-4">{item.description}</td>
                         <td className="py-4 text-right text-slate-500 font-sans">{item.quantity}</td>
-                        <td className="py-4 text-right text-slate-500 font-sans">${item.unitPrice.toFixed(2)}</td>
-                        <td className="py-4 text-right font-medium font-sans">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                        <td className="py-4 text-right text-slate-500 font-sans">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                        <td className="py-4 text-right font-medium font-sans">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                      </tr>
                   ))}
                </tbody>
@@ -650,16 +780,38 @@ export const BoutiqueTemplate = ({ invoice, client, profile, totals }: TemplateP
          <div className="mt-12 px-4 flex flex-col items-end">
             <div className="w-1/3 border-t border-slate-800 pt-4">
                <div className="flex justify-between mb-2 text-sm">
-                  <span className="italic text-slate-500">Subtotal</span>
-                  <span className="font-sans">${totals.subtotal.toFixed(2)}</span>
+                  <span className="italic text-slate-500">{invoice.labels?.subtotal || 'Subtotal'}</span>
+                  <span className="font-sans">{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
+               {totals.discountAmount > 0 && (
+                  <div className="flex justify-between mb-2 text-sm">
+                     <span className="italic text-slate-500">{invoice.labels?.discount || 'Discount'}</span>
+                     <span className="font-sans">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between mb-6 text-sm">
-                  <span className="italic text-slate-500">Tax</span>
-                  <span className="font-sans">${totals.taxAmount.toFixed(2)}</span>
+                  <span className="italic text-slate-500">{invoice.labels?.tax || 'Tax'}</span>
+                  <span className="font-sans">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
+               {totals.shipping > 0 && (
+                  <div className="flex justify-between mb-6 text-sm">
+                     <span className="italic text-slate-500">{invoice.labels?.shipping || 'Shipping'}</span>
+                     <span className="font-sans">{formatCurrency(totals.shipping, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-xl">
-                  <span className="font-medium">Total</span>
-                  <span className="font-medium font-sans" style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+                  <span className="font-medium">{invoice.labels?.total || 'Total'}</span>
+                  <span className="font-medium font-sans" style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               </div>
+               {totals.amountPaid > 0 && (
+                  <div className="flex justify-between mb-2 text-sm pt-2">
+                     <span className="italic text-slate-500">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                     <span className="font-sans">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                  </div>
+               )}
+               <div className="flex justify-between text-lg pt-2 border-t border-slate-800">
+                  <span className="font-medium">{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                  <span className="font-medium font-sans" style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
@@ -745,8 +897,8 @@ export const TechTemplate = ({ invoice, client, profile, totals }: TemplateProps
                      <tr key={item.id}>
                         <td className="py-4 text-white font-bold">{item.description}</td>
                         <td className="py-4 text-right text-slate-400">{item.quantity}</td>
-                        <td className="py-4 text-right text-slate-400">${item.unitPrice.toFixed(2)}</td>
-                        <td className="py-4 text-right text-cyan-400">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                        <td className="py-4 text-right text-slate-400">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                        <td className="py-4 text-right text-cyan-400">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                      </tr>
                   ))}
                </tbody>
@@ -755,16 +907,38 @@ export const TechTemplate = ({ invoice, client, profile, totals }: TemplateProps
             <div className="flex justify-end">
                <div className="w-1/3 bg-cyan-950/20 p-6 border border-cyan-500/20 rounded-lg">
                   <div className="flex justify-between mb-2 text-slate-400">
-                     <span>Subtotal</span>
-                     <span>${totals.subtotal.toFixed(2)}</span>
+                     <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
+                     <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                   </div>
+                  {totals.discountAmount > 0 && (
+                     <div className="flex justify-between mb-2 text-slate-400">
+                        <span>{invoice.labels?.discount || 'Discount'}</span>
+                        <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                     </div>
+                  )}
                   <div className="flex justify-between mb-4 text-slate-400">
-                     <span>Tax ({invoice.taxRate}%)</span>
-                     <span>${totals.taxAmount.toFixed(2)}</span>
+                     <span>{invoice.labels?.tax || 'Tax'}</span>
+                     <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                   </div>
+                  {totals.shipping > 0 && (
+                     <div className="flex justify-between mb-4 text-slate-400">
+                        <span>{invoice.labels?.shipping || 'Shipping'}</span>
+                        <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                     </div>
+                  )}
                   <div className="flex justify-between text-2xl font-bold text-white border-t border-cyan-500/30 pt-4">
-                     <span>Total</span>
-                     <span className="text-cyan-400">${totals.total.toFixed(2)}</span>
+                     <span>{invoice.labels?.total || 'Total'}</span>
+                     <span className="text-cyan-400">{formatCurrency(totals.total, invoice.currency)}</span>
+                  </div>
+                  {totals.amountPaid > 0 && (
+                     <div className="flex justify-between mb-2 text-slate-400 pt-2">
+                        <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                        <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                     </div>
+                  )}
+                  <div className="flex justify-between text-xl font-bold text-white border-t border-cyan-500/30 pt-2">
+                     <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                     <span className="text-cyan-400">{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                   </div>
                </div>
             </div>
@@ -813,7 +987,7 @@ export const FinanceTemplate = ({ invoice, client, profile, totals }: TemplatePr
          </div>
          <div>
             <span className="block text-xs uppercase text-blue-800 font-bold">Amount Due</span>
-            <span className="text-2xl font-bold text-blue-900">${totals.total.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-blue-900">{formatCurrency(totals.total, invoice.currency)}</span>
          </div>
       </div>
 
@@ -831,8 +1005,8 @@ export const FinanceTemplate = ({ invoice, client, profile, totals }: TemplatePr
                <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                   <td className="py-4 px-4 font-medium">{item.description}</td>
                   <td className="py-4 px-4 text-center text-slate-600">{item.quantity}</td>
-                  <td className="py-4 px-4 text-right text-slate-600">${item.unitPrice.toFixed(2)}</td>
-                  <td className="py-4 px-4 text-right font-bold text-slate-900">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                  <td className="py-4 px-4 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                  <td className="py-4 px-4 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                </tr>
             ))}
          </tbody>
@@ -841,16 +1015,38 @@ export const FinanceTemplate = ({ invoice, client, profile, totals }: TemplatePr
       <div className="flex justify-end">
          <div className="w-1/2 border-t-2 border-blue-900 pt-4">
             <div className="flex justify-between mb-2">
-               <span className="font-bold text-slate-600">Subtotal</span>
-               <span>${totals.subtotal.toFixed(2)}</span>
+               <span className="font-bold text-slate-600">{invoice.labels?.subtotal || 'Subtotal'}</span>
+               <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
             </div>
+            {totals.discountAmount > 0 && (
+               <div className="flex justify-between mb-2">
+                  <span className="font-bold text-slate-600">{invoice.labels?.discount || 'Discount'}</span>
+                  <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+               </div>
+            )}
             <div className="flex justify-between mb-4">
-               <span className="font-bold text-slate-600">Tax</span>
-               <span>${totals.taxAmount.toFixed(2)}</span>
+               <span className="font-bold text-slate-600">{invoice.labels?.tax || 'Tax'}</span>
+               <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
             </div>
+            {totals.shipping > 0 && (
+               <div className="flex justify-between mb-4">
+                  <span className="font-bold text-slate-600">{invoice.labels?.shipping || 'Shipping'}</span>
+                  <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+               </div>
+            )}
             <div className="flex justify-between text-2xl font-bold text-blue-900 bg-blue-50 p-4 rounded">
-               <span>Total</span>
-               <span>${totals.total.toFixed(2)}</span>
+               <span>{invoice.labels?.total || 'Total'}</span>
+               <span>{formatCurrency(totals.total, invoice.currency)}</span>
+            </div>
+            {totals.amountPaid > 0 && (
+               <div className="flex justify-between mb-2 pt-2">
+                  <span className="font-bold text-slate-600">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                  <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+               </div>
+            )}
+            <div className="flex justify-between text-xl font-bold text-blue-900 pt-2 border-t border-blue-900">
+               <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+               <span>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
             </div>
          </div>
       </div>
@@ -911,10 +1107,10 @@ export const CreativeTemplate = ({ invoice, client, profile, totals }: TemplateP
                   <div key={item.id} className="flex items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                      <div className="flex-1">
                         <p className="font-bold text-lg text-slate-800">{item.description}</p>
-                        <p className="text-sm text-slate-500">{item.quantity} x ${item.unitPrice.toFixed(2)}</p>
+                        <p className="text-sm text-slate-500">{item.quantity} x {formatCurrency(item.unitPrice, invoice.currency)}</p>
                      </div>
                      <div className="font-bold text-xl text-slate-900">
-                        ${(item.quantity * item.unitPrice).toFixed(2)}
+                        {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
                      </div>
                   </div>
                ))}
@@ -922,16 +1118,38 @@ export const CreativeTemplate = ({ invoice, client, profile, totals }: TemplateP
 
             <div className="bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
                <div className="flex justify-between mb-2">
-                  <span className="font-bold text-slate-500">Subtotal</span>
-                  <span className="font-bold">${totals.subtotal.toFixed(2)}</span>
+                  <span className="font-bold text-slate-500">{invoice.labels?.subtotal || 'Subtotal'}</span>
+                  <span className="font-bold">{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
+               {totals.discountAmount > 0 && (
+                  <div className="flex justify-between mb-2">
+                     <span className="font-bold text-slate-500">{invoice.labels?.discount || 'Discount'}</span>
+                     <span className="font-bold">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between mb-6">
-                  <span className="font-bold text-slate-500">Tax</span>
-                  <span className="font-bold">${totals.taxAmount.toFixed(2)}</span>
+                  <span className="font-bold text-slate-500">{invoice.labels?.tax || 'Tax'}</span>
+                  <span className="font-bold">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
+               {totals.shipping > 0 && (
+                  <div className="flex justify-between mb-6">
+                     <span className="font-bold text-slate-500">{invoice.labels?.shipping || 'Shipping'}</span>
+                     <span className="font-bold">{formatCurrency(totals.shipping, invoice.currency)}</span>
+                  </div>
+               )}
                <div className="flex justify-between text-3xl font-black text-slate-900 pt-6 border-t border-slate-100">
-                  <span>Total</span>
-                  <span style={{ color: profile.brandColor }}>${totals.total.toFixed(2)}</span>
+                  <span>{invoice.labels?.total || 'Total'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               </div>
+               {totals.amountPaid > 0 && (
+                  <div className="flex justify-between mb-2 pt-2">
+                     <span className="font-bold text-slate-500">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                     <span className="font-bold">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                  </div>
+               )}
+               <div className="flex justify-between text-2xl font-black text-slate-900 pt-2 border-t border-slate-100">
+                  <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+                  <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
@@ -977,8 +1195,8 @@ export const SimpleTemplate = ({ invoice, client, profile, totals }: TemplatePro
                <tr key={item.id} className="border-b border-slate-100">
                   <td className="py-4 font-medium">{item.description}</td>
                   <td className="py-4 text-right">{item.quantity}</td>
-                  <td className="py-4 text-right">${item.unitPrice.toFixed(2)}</td>
-                  <td className="py-4 text-right font-bold">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                  <td className="py-4 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                  <td className="py-4 text-right font-bold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                </tr>
             ))}
          </tbody>
@@ -987,16 +1205,38 @@ export const SimpleTemplate = ({ invoice, client, profile, totals }: TemplatePro
       <div className="flex justify-end">
          <div className="w-64">
             <div className="flex justify-between py-2">
-               <span>Subtotal</span>
-               <span>${totals.subtotal.toFixed(2)}</span>
+               <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
+               <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
             </div>
+            {totals.discountAmount > 0 && (
+               <div className="flex justify-between py-2">
+                  <span>{invoice.labels?.discount || 'Discount'}</span>
+                  <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+               </div>
+            )}
             <div className="flex justify-between py-2">
-               <span>Tax</span>
-               <span>${totals.taxAmount.toFixed(2)}</span>
+               <span>{invoice.labels?.tax || 'Tax'}</span>
+               <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
             </div>
+            {totals.shipping > 0 && (
+               <div className="flex justify-between py-2">
+                  <span>{invoice.labels?.shipping || 'Shipping'}</span>
+                  <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+               </div>
+            )}
             <div className="flex justify-between py-2 border-t-2 border-slate-900 font-bold text-xl">
-               <span>Total</span>
-               <span>${totals.total.toFixed(2)}</span>
+               <span>{invoice.labels?.total || 'Total'}</span>
+               <span>{formatCurrency(totals.total, invoice.currency)}</span>
+            </div>
+            {totals.amountPaid > 0 && (
+               <div className="flex justify-between py-2 pt-2">
+                  <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
+                  <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+               </div>
+            )}
+            <div className="flex justify-between py-2 font-bold text-lg border-t border-slate-900">
+               <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
+               <span>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
             </div>
          </div>
       </div>
