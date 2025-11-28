@@ -64,7 +64,6 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       notes: 'Thank you for your business!',
       terms: 'Payment is due within 14 days.',
       template: 'modern',
-      layout: 'portrait',
       paymentLink: profile.defaultPaymentLink || '',
       labels: DEFAULT_LABELS
     };
@@ -180,15 +179,14 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         logging: false,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: invoiceData.layout === 'landscape' ? 1123 : 794,
-        height: invoiceData.layout === 'landscape' ? 794 : 1123,
+        width: 794, // A4 width at 96 DPI
+        height: 1123, // A4 height at 96 DPI
         windowWidth: 1600,
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const isLandscape = invoiceData.layout === 'landscape';
       const pdf = new jsPDF({
-        orientation: isLandscape ? 'l' : 'p',
+        orientation: 'p',
         unit: 'mm',
         format: 'a4'
       });
@@ -293,21 +291,6 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: profile.brandColor, color: profile.brandColor }}></div>
                     <span className="font-medium tracking-wide">Brand Color Active</span>
-                  </div>
-
-                  <div className="flex bg-white/[0.02] p-1 rounded-lg border border-white/5">
-                    <button
-                      onClick={() => setInvoiceData({ ...invoiceData, layout: 'portrait' })}
-                      className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold transition-all ${invoiceData.layout === 'portrait' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      Portrait
-                    </button>
-                    <button
-                      onClick={() => setInvoiceData({ ...invoiceData, layout: 'landscape' })}
-                      className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold transition-all ${invoiceData.layout === 'landscape' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      Landscape
-                    </button>
                   </div>
                 </div>
               </div>
@@ -789,8 +772,8 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
               id="invoice-preview-container"
               className="bg-white flex flex-col shadow-2xl transition-all duration-300"
               style={{
-                width: invoiceData.layout === 'landscape' ? '1123px' : '794px',
-                minHeight: invoiceData.layout === 'landscape' ? '794px' : '1123px'
+                width: '794px',
+                minHeight: '1123px'
               }}
             >
               <InvoicePreview invoice={previewInvoice} client={client} profile={profile} />
@@ -804,8 +787,8 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         <div
           id="pdf-render-container"
           style={{
-            width: invoiceData.layout === 'landscape' ? '1123px' : '794px', // A4 width at 96 DPI
-            minHeight: invoiceData.layout === 'landscape' ? '794px' : '1123px', // A4 height at 96 DPI
+            width: '794px', // A4 width at 96 DPI
+            minHeight: '1123px', // A4 height at 96 DPI
             backgroundColor: 'white',
             display: 'flex',
             flexDirection: 'column'

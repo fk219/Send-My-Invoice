@@ -12,10 +12,16 @@ interface InvoicePreviewProps {
 export default function InvoicePreview({ invoice, client, profile }: InvoicePreviewProps) {
   const totals = useMemo(() => {
     const subtotal = invoice.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-    const taxAmount = subtotal * (invoice.taxRate / 100);
-    const total = subtotal + taxAmount;
-    return { subtotal, taxAmount, total };
-  }, [invoice.items, invoice.taxRate]);
+    const discountAmount = invoice.discountType === 'percent' ? subtotal * (invoice.discountValue / 100) : invoice.discountValue;
+    const taxable = subtotal - discountAmount;
+    const taxAmount = invoice.taxType === 'percent' ? taxable * (invoice.taxValue / 100) : invoice.taxValue;
+    const shipping = invoice.shipping || 0;
+    const total = taxable + taxAmount + shipping;
+    const amountPaid = invoice.amountPaid || 0;
+    const balanceDue = total - amountPaid;
+
+    return { subtotal, discountAmount, taxAmount, shipping, total, amountPaid, balanceDue };
+  }, [invoice]);
 
   const renderTemplate = () => {
     switch (invoice.template) {
@@ -44,7 +50,7 @@ export default function InvoicePreview({ invoice, client, profile }: InvoicePrev
   };
 
   return (
-    <div className={`w-full h-full ${invoice.layout === 'landscape' ? 'min-h-[210mm]' : 'min-h-[297mm]'}`}>
+    <div className="w-full h-full min-h-[297mm]">
       {renderTemplate()}
     </div>
   );

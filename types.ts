@@ -80,7 +80,6 @@ export interface Invoice {
 
   // Visuals
   template: TemplateType;
-  layout: 'portrait' | 'landscape';
   paymentLink?: string;
 
   // Custom Labels
