@@ -59,7 +59,7 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
         </div>
         <button
           onClick={onNewInvoice}
-          className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-slate-950 px-6 py-3 rounded-xl font-medium transition-all shadow-[0_0_20px_rgba(132,204,22,0.3)] hover:shadow-[0_0_30px_rgba(132,204,22,0.5)] hover:scale-105 active:scale-95"
+          className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-slate-950 px-6 py-3 rounded-xl font-medium transition-all shadow-[0_4px_20px_rgba(132,204,22,0.3)] hover:shadow-[0_6px_30px_rgba(132,204,22,0.5)] hover:scale-105 active:scale-95"
         >
           <Plus size={18} />
           Create Invoice
@@ -92,12 +92,12 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
       </div>
 
       {/* Chart Section */}
-      <div className="bg-white/5 p-8 rounded-2xl border border-white/10 backdrop-blur-sm">
+      <div className="bg-slate-900/50 p-8 rounded-2xl border border-white/5 backdrop-blur-xl shadow-sm">
         <h3 className="text-lg font-medium text-white mb-6 font-display tracking-wide">Revenue History</h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dy={10} />
               <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dx={-10} />
               <Tooltip
@@ -118,7 +118,7 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
       </div>
 
       {/* Recent Invoices List */}
-      <div className="bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm overflow-hidden">
+      <div className="bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-xl overflow-hidden shadow-sm">
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
           <h3 className="text-lg font-medium text-white font-display tracking-wide">Recent Invoices</h3>
           <button className="text-xs text-lime-400 hover:text-lime-300 font-medium uppercase tracking-wider">View All</button>
@@ -148,9 +148,9 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
                     <td className="px-6 py-4 font-medium text-white">${total.toFixed(2)}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${inv.status === 'paid' ? 'bg-lime-400/10 text-lime-400 border-lime-400/20' :
-                          inv.status === 'sent' ? 'bg-blue-400/10 text-blue-400 border-blue-400/20' :
-                            inv.status === 'overdue' ? 'bg-red-400/10 text-red-400 border-red-400/20' :
-                              'bg-slate-400/10 text-slate-400 border-slate-400/20'
+                        inv.status === 'sent' ? 'bg-blue-400/10 text-blue-400 border-blue-400/20' :
+                          inv.status === 'overdue' ? 'bg-red-400/10 text-red-400 border-red-400/20' :
+                            'bg-slate-400/10 text-slate-400 border-slate-400/20'
                         }`}>
                         {inv.status}
                       </span>
@@ -175,7 +175,7 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
 }
 
 const StatCard = ({ title, amount, icon, trend, isAlert, color = 'lime' }: any) => (
-  <div className="bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-sm flex flex-col justify-between h-36 group hover:border-white/20 transition-all hover:-translate-y-1">
+  <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/5 backdrop-blur-xl flex flex-col justify-between h-36 group hover:border-white/10 transition-all hover:-translate-y-1 shadow-sm hover:shadow-md">
     <div className="flex justify-between items-start">
       <span className="text-slate-400 font-medium text-xs uppercase tracking-wider">{title}</span>
       <div className={`p-2.5 rounded-xl bg-white/5 text-${color}-400 group-hover:bg-${color}-400/20 transition-colors`}>
