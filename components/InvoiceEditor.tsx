@@ -230,7 +230,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           <button
             onClick={handleDownloadPDF}
             disabled={generatingPdf}
-            className="flex items-center gap-2 px-5 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-all disabled:opacity-50 border border-transparent hover:border-white/10"
+            className="flex items-center gap-2 px-5 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-all disabled:opacity-50 border border-transparent hover:border-white/10 shadow-sm hover:shadow-md"
           >
             {generatingPdf ? (
               <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
@@ -241,7 +241,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           </button>
           <button
             onClick={() => onSave(invoiceData)}
-            className="flex items-center gap-2 px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-slate-950 rounded-xl font-medium transition-all shadow-[0_0_20px_rgba(132,204,22,0.3)] hover:shadow-[0_0_30px_rgba(132,204,22,0.5)] hover:scale-105 active:scale-95"
+            className="flex items-center gap-2 px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-slate-950 rounded-xl font-medium transition-all shadow-[0_4px_20px_rgba(132,204,22,0.3)] hover:shadow-[0_6px_30px_rgba(132,204,22,0.5)] hover:scale-[1.02] active:scale-[0.98]"
           >
             <Save size={18} />
             <span className="font-medium tracking-wide">Save Invoice</span>
@@ -257,27 +257,27 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           <div className="space-y-8 max-w-2xl mx-auto">
 
             {/* Template & Brand Card */}
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
-                  <LayoutTemplate size={16} />
+                <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2">
+                  <LayoutTemplate size={14} />
                   Template & Design
                 </h3>
-                <label className="cursor-pointer text-xs text-slate-400 hover:text-lime-400 font-medium flex items-center gap-2 transition-colors bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 hover:border-lime-500/30">
+                <label className="cursor-pointer text-[10px] uppercase font-bold text-slate-400 hover:text-lime-400 flex items-center gap-2 transition-colors bg-white/[0.02] px-3 py-1.5 rounded-lg border border-white/5 hover:border-lime-500/30 hover:bg-white/[0.05]">
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                  <Upload size={14} />
+                  <Upload size={12} />
                   Upload Logo
                 </label>
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Select Template</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest">Select Template</label>
                   <div className="relative group">
                     <select
                       value={invoiceData.template}
                       onChange={(e) => setInvoiceData({ ...invoiceData, template: e.target.value as TemplateType })}
-                      className="w-full appearance-none bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500 outline-none capitalize transition-all group-hover:border-white/20"
+                      className="w-full appearance-none bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/50 outline-none capitalize transition-all group-hover:border-white/20"
                     >
                       {(['modern', 'classic', 'minimal', 'bold', 'agency', 'boutique', 'tech', 'finance', 'creative', 'simple'] as TemplateType[]).map(t => (
                         <option key={t} value={t} className="bg-slate-900 capitalize">{t} Template</option>
@@ -292,19 +292,19 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                 <div className="flex items-center justify-between border-t border-white/5 pt-4">
                   <div className="flex items-center gap-2 text-xs text-slate-500">
                     <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: profile.brandColor, color: profile.brandColor }}></div>
-                    <span className="font-light tracking-wide">Brand Color Active</span>
+                    <span className="font-medium tracking-wide">Brand Color Active</span>
                   </div>
 
-                  <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
+                  <div className="flex bg-white/[0.02] p-1 rounded-lg border border-white/5">
                     <button
                       onClick={() => setInvoiceData({ ...invoiceData, layout: 'portrait' })}
-                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'portrait' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold transition-all ${invoiceData.layout === 'portrait' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       Portrait
                     </button>
                     <button
                       onClick={() => setInvoiceData({ ...invoiceData, layout: 'landscape' })}
-                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${invoiceData.layout === 'landscape' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                      className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold transition-all ${invoiceData.layout === 'landscape' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                       Landscape
                     </button>
@@ -314,28 +314,28 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             </div>
 
             {/* Invoice Details Card */}
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                <FileText size={16} />
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors shadow-sm">
+              <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <FileText size={14} />
                 Invoice Details
               </h3>
               <div className="grid grid-cols-2 gap-6">
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Invoice Number</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Invoice Number</label>
                   <input
                     type="text"
                     value={invoiceData.number}
                     onChange={(e) => setInvoiceData({ ...invoiceData, number: e.target.value })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none font-mono"
+                    className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none font-mono placeholder:text-slate-700"
                   />
                 </div>
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Client</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Client</label>
                   <div className="relative">
                     <select
                       value={invoiceData.clientId}
                       onChange={handleClientChange}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none appearance-none"
                     >
                       {clients.map(c => <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>)}
                     </select>
@@ -345,46 +345,46 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                   </div>
                 </div>
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Issue Date</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Issue Date</label>
                   <div className="relative">
                     <input
                       type="date"
                       value={invoiceData.issueDate}
                       onChange={(e) => setInvoiceData({ ...invoiceData, issueDate: e.target.value })}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none [color-scheme:dark]"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
                   </div>
                 </div>
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Due Date</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Due Date</label>
                   <div className="relative">
                     <input
                       type="date"
                       value={invoiceData.dueDate}
                       onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value })}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none [color-scheme:dark]"
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none [color-scheme:dark]"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
                   </div>
                 </div>
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">PO Number</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">PO Number</label>
                   <input
                     type="text"
                     value={invoiceData.poNumber || ''}
                     onChange={(e) => setInvoiceData({ ...invoiceData, poNumber: e.target.value })}
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
+                    className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none placeholder:text-slate-700"
                     placeholder="Optional"
                   />
                 </div>
                 <div className="group">
-                  <label className="block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">Currency</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Currency</label>
                   <div className="relative">
                     <select
                       value={invoiceData.currency}
                       onChange={(e) => setInvoiceData({ ...invoiceData, currency: e.target.value })}
-                      className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none appearance-none"
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none appearance-none"
                     >
                       {CURRENCIES.map(c => <option key={c.code} value={c.code} className="bg-slate-900">{c.code} - {c.name}</option>)}
                     </select>
@@ -397,14 +397,14 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             </div>
 
             {/* Line Items Card */}
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                <span className="w-1 h-4 bg-lime-500 rounded-full"></span>
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors shadow-sm">
+              <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <span className="w-1 h-4 bg-lime-500 rounded-full shadow-[0_0_10px_rgba(132,204,22,0.5)]"></span>
                 Line Items
               </h3>
               <div className="space-y-3">
                 {invoiceData.items.map((item, index) => (
-                  <div key={item.id} className="flex gap-3 items-start bg-black/20 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
+                  <div key={item.id} className="flex gap-3 items-start bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
                     <div className="flex-1 space-y-3">
                       <div className="flex gap-2">
                         <input
@@ -412,7 +412,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                           placeholder="Description"
                           value={item.description}
                           onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                          className="flex-1 rounded-lg bg-transparent border-b border-white/10 p-2 text-sm text-white focus:border-lime-500 outline-none transition-colors placeholder:text-slate-600"
+                          className="flex-1 rounded-lg bg-transparent border-b border-white/10 p-2 text-sm text-white focus:border-lime-500/50 outline-none transition-colors placeholder:text-slate-600"
                         />
                         <button
                           onClick={() => handleAIEnhance(item.id, item.description)}
@@ -429,24 +429,24 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                       </div>
                       <div className="flex gap-4">
                         <div className="w-24">
-                          <label className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Qty</label>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Qty</label>
                           <input
                             type="number"
                             min="0"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value))}
-                            className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white focus:border-lime-500 outline-none"
+                            className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white focus:border-lime-500/50 outline-none"
                           />
                         </div>
                         <div className="w-32 relative">
-                          <label className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 block">Price</label>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Price</label>
                           <span className="absolute left-3 top-[29px] text-slate-500 text-xs">{CURRENCIES.find(c => c.code === invoiceData.currency)?.symbol || '$'}</span>
                           <input
                             type="number"
                             min="0"
                             value={item.unitPrice}
                             onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value))}
-                            className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white pl-6 focus:border-lime-500 outline-none"
+                            className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white pl-6 focus:border-lime-500/50 outline-none"
                           />
                         </div>
                       </div>
@@ -467,17 +467,17 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
               </div>
               <button
                 onClick={addItem}
-                className="mt-4 flex items-center gap-2 text-sm font-medium text-lime-400 hover:text-lime-300 transition-colors px-3 py-2 rounded-lg hover:bg-lime-400/10 border border-transparent hover:border-lime-400/20"
+                className="mt-4 w-full flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-lime-400 hover:text-lime-300 transition-all px-4 py-3 rounded-xl border border-dashed border-lime-500/30 hover:border-lime-500/50 bg-lime-500/5 hover:bg-lime-500/10"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Add Line Item
               </button>
             </div>
 
             {/* Totals & Configuration Card */}
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-              <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                <DollarSign size={16} />
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors shadow-sm">
+              <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2 mb-6">
+                <DollarSign size={14} />
                 Totals & Adjustments
               </h3>
 
@@ -504,7 +504,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     </div>
                   </div>
                   {showDiscount && (
-                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <div className="flex gap-4 items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
                       <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
                         <button
                           onClick={() => setInvoiceData({ ...invoiceData, discountType: 'percent' })}
@@ -545,7 +545,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     </div>
                   </div>
                   {showTax && (
-                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <div className="flex gap-4 items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
                       <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
                         <button
                           onClick={() => setInvoiceData({ ...invoiceData, taxType: 'percent' })}
@@ -586,7 +586,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     </div>
                   </div>
                   {showShipping && (
-                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <div className="flex gap-4 items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
                       <span className="text-xs font-bold text-slate-500 px-2">$</span>
                       <input
                         type="number"
@@ -614,7 +614,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     </div>
                   </div>
                   {showAmountPaid && (
-                    <div className="flex gap-4 items-center bg-black/20 p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
+                    <div className="flex gap-4 items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 animate-in slide-in-from-top-2 fade-in duration-200">
                       <span className="text-xs font-bold text-slate-500 px-2">$</span>
                       <input
                         type="number"
@@ -647,13 +647,13 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             </div>
 
             {/* Collapsible Labels Section */}
-            <div className="bg-white/[0.03] rounded-2xl border border-white/5 overflow-hidden">
+            <div className="bg-white/[0.03] rounded-2xl border border-white/5 overflow-hidden shadow-sm">
               <button
                 onClick={() => setShowLabels(!showLabels)}
                 className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
               >
-                <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
-                  <Palette size={16} />
+                <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2">
+                  <Palette size={14} />
                   Customize Labels
                 </h3>
                 <div className="text-slate-400">
@@ -675,7 +675,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                   <div className="grid grid-cols-2 gap-4">
                     {Object.entries(invoiceData.labels || DEFAULT_LABELS).map(([key, value]) => (
                       <div key={key} className="group">
-                        <label className="block text-[10px] font-medium text-slate-500 mb-1 uppercase tracking-wider group-focus-within:text-lime-400 transition-colors">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </label>
                         <input
@@ -685,7 +685,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                             ...invoiceData,
                             labels: { ...invoiceData.labels, [key]: e.target.value }
                           })}
-                          className="w-full rounded-lg bg-black/20 border border-white/10 p-2 text-xs text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none"
+                          className="w-full rounded-lg bg-white/[0.02] backdrop-blur-sm border border-white/10 p-2 text-xs text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none"
                         />
                       </div>
                     ))}
@@ -695,10 +695,10 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             </div>
 
             {/* Payment & Notes Card */}
-            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+            <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 hover:border-white/10 transition-colors shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-sm font-medium text-lime-400 uppercase tracking-widest flex items-center gap-2">
-                  <CreditCard size={16} />
+                <h3 className="text-xs font-bold text-lime-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard size={14} />
                   Payment & Notes
                 </h3>
                 {profile.defaultPaymentLink && !invoiceData.paymentLink && (
@@ -713,7 +713,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
               <div className="space-y-6">
                 {!invoiceData.paymentLink ? (
-                  <div className="text-center p-6 bg-black/20 rounded-xl border border-white/5 border-dashed group hover:border-white/10 transition-colors">
+                  <div className="text-center p-6 bg-white/[0.02] rounded-xl border border-white/5 border-dashed group hover:border-white/10 transition-colors">
                     <p className="text-xs text-slate-400 mb-4 font-light">Accept payments online securely via Stripe.</p>
                     <button
                       onClick={handleGenerateStripeLink}
@@ -758,13 +758,13 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                 )}
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Notes / Terms</label>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest">Notes / Terms</label>
                   <textarea
                     value={invoiceData.notes}
                     onChange={(e) => setInvoiceData({ ...invoiceData, notes: e.target.value })}
                     rows={4}
                     placeholder="e.g. Payment due within 14 days. Thank you!"
-                    className="w-full rounded-xl bg-black/20 border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500 focus:border-lime-500 transition-all outline-none placeholder:text-slate-600"
+                    className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none placeholder:text-slate-700"
                   />
                 </div>
               </div>
@@ -775,12 +775,15 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
         {/* Live Preview (Right) */}
         <div className="hidden lg:flex w-1/2 bg-black/20 overflow-y-auto flex-col items-center relative py-12 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          {/* Radial Gradient Background for Depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.03] to-transparent pointer-events-none"></div>
+
           <div className="sticky top-0 z-10 bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-slate-300 text-[10px] font-bold shadow-lg uppercase tracking-widest border border-white/10 mb-8 flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${generatingPdf ? 'bg-yellow-500 animate-pulse' : 'bg-lime-500'}`}></div>
             {hoveredTemplate ? `Previewing: ${hoveredTemplate}` : 'Live Preview'}
           </div>
 
-          <div className="origin-top transform scale-[0.65] xl:scale-[0.75] 2xl:scale-[0.85] transition-transform duration-300 shadow-[0_0_50px_rgba(0,0,0,0.5)] mb-24">
+          <div className="origin-top transform scale-[0.65] xl:scale-[0.75] 2xl:scale-[0.85] transition-transform duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] mb-24 relative z-0">
             {/* ID used for HTML2Canvas */}
             <div
               id="invoice-preview-container"
