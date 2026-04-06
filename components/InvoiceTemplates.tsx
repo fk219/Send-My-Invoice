@@ -23,72 +23,75 @@ const formatCurrency = (amount: number, currency: string = 'USD') => {
 
 // --- Modern Template ---
 export const ModernTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-16 flex flex-col justify-between text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col justify-between text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       <div>
          {/* Header */}
-         <div className="flex justify-between items-start mb-12">
+         <div className="flex justify-between items-start mb-8">
             <div className="flex items-center gap-4">
                {profile.logoUrl && (
-                  <img src={profile.logoUrl} alt="Logo" className="h-32 w-32 object-contain rounded-md" />
+                  <img src={profile.logoUrl} alt="Logo" className="h-24 w-24 object-contain rounded-md" />
                )}
                <div>
-                  <h1 className="text-6xl font-display font-bold tracking-tight" style={{ color: profile.brandColor }}>{profile.name}</h1>
-                  <div className="text-sm text-slate-500 mt-1 whitespace-pre-wrap max-w-xs">
+                  <h1 className="text-4xl font-display font-bold tracking-tight" style={{ color: profile.brandColor }}>{profile.name}</h1>
+                  <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap max-w-xs">
                      {profile.address}
                   </div>
                </div>
             </div>
             <div className="text-right">
-               <h2 className="text-4xl font-light text-slate-300 mb-2">INVOICE</h2>
-               <p className="font-mono font-medium text-lg" style={{ color: profile.brandColor }}>#{invoice.number}</p>
+               <h2 className="text-3xl font-light text-slate-300 mb-1">INVOICE</h2>
+               <p className="font-mono font-medium text-base" style={{ color: profile.brandColor }}>#{invoice.number}</p>
             </div>
          </div>
 
          {/* Meta Grid */}
-         <div className="grid grid-cols-2 gap-12 mb-12">
+         <div className="grid grid-cols-2 gap-8 mb-8">
             <div>
-               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Bill To</h3>
-               <div className="text-sm">
-                  <p className="font-bold text-slate-900">{client.name}</p>
-                  <p className="text-slate-600 mt-1 whitespace-pre-wrap">{client.address}</p>
-                  <p className="text-slate-600 mt-1">{client.email}</p>
+               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Bill To</h3>
+               <div className="text-xs">
+                  <p className="font-bold text-slate-900 text-sm">{client.name}</p>
+                  <p className="text-slate-600 mt-0.5 whitespace-pre-wrap">{client.address}</p>
+                  <p className="text-slate-600 mt-0.5">{client.email}</p>
                </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Issued</h3>
-                  <p className="text-sm font-medium">{invoice.issueDate}</p>
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Issued</h3>
+                  <p className="text-xs font-medium">{invoice.issueDate}</p>
                </div>
                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Due</h3>
-                  <p className="text-sm font-medium">{invoice.dueDate}</p>
+                  <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Due</h3>
+                  <p className="text-xs font-medium">{invoice.dueDate}</p>
                </div>
                {invoice.poNumber && (
-                  <div className="col-span-2 mt-2">
-                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">{invoice.labels?.poNumber || 'PO Number'}</h3>
-                     <p className="text-sm font-medium">{invoice.poNumber}</p>
+                  <div className="col-span-2 mt-1">
+                     <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">{invoice.labels?.poNumber || 'PO Number'}</h3>
+                     <p className="text-xs font-medium">{invoice.poNumber}</p>
                   </div>
                )}
             </div>
          </div>
 
          {/* Table */}
-         <table className="w-full mb-12">
+         <table className="w-full mb-8">
             <thead>
                <tr className="border-b-2 border-slate-100">
-                  <th className="text-left py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Description</th>
-                  <th className="text-right py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 w-20">Qty</th>
-                  <th className="text-right py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Price</th>
-                  <th className="text-right py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Amount</th>
+                  <th className="text-left py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Description</th>
+                  <th className="text-right py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-16">Qty</th>
+                  <th className="text-right py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-24">Price</th>
+                  <th className="text-right py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500 w-28">Amount</th>
                </tr>
             </thead>
             <tbody>
                {invoice.items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50">
-                     <td className="py-4 text-sm text-slate-800 font-medium"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
-                     <td className="py-4 text-sm text-slate-600 text-right">{item.quantity}</td>
-                     <td className="py-4 text-sm text-slate-600 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                     <td className="py-4 text-sm text-slate-900 font-semibold text-right">
+                     <td className="py-3 text-xs text-slate-800">
+                        <div className="font-semibold">{item.description}</div>
+                        {item.details && <div className="text-[10px] text-slate-500 mt-0.5 whitespace-pre-wrap leading-tight">{item.details}</div>}
+                     </td>
+                     <td className="py-3 text-xs text-slate-600 text-right align-top">{item.quantity}</td>
+                     <td className="py-3 text-xs text-slate-600 text-right align-top">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                     <td className="py-3 text-xs text-slate-900 font-semibold text-right align-top">
                         {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
                      </td>
                   </tr>
@@ -97,39 +100,39 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
          </table>
 
          {/* Summaries */}
-         <div className="flex justify-end mb-12">
-            <div className="w-72 space-y-3 bg-slate-50 p-6 rounded-xl">
-               <div className="flex justify-between text-sm text-slate-600">
+         <div className="flex justify-end mb-8">
+            <div className="w-64 space-y-2 bg-slate-50 p-4 rounded-xl">
+               <div className="flex justify-between text-xs text-slate-600">
                   <span>{invoice.labels?.subtotal || 'Subtotal'}</span>
                   <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
                {totals.discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-slate-600">
+                  <div className="flex justify-between text-xs text-slate-600">
                      <span>{invoice.labels?.discount || 'Discount'}</span>
                      <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-sm text-slate-600">
+               <div className="flex justify-between text-xs text-slate-600">
                   <span>{invoice.labels?.tax || 'Tax'}</span>
                   <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
                {totals.shipping > 0 && (
-                  <div className="flex justify-between text-sm text-slate-600">
+                  <div className="flex justify-between text-xs text-slate-600">
                      <span>{invoice.labels?.shipping || 'Shipping'}</span>
                      <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-xl font-bold text-slate-900 pt-4 border-t border-slate-200">
+               <div className="flex justify-between text-base font-bold text-slate-900 pt-3 border-t border-slate-200 mt-2">
                   <span>{invoice.labels?.total || 'Total'}</span>
                   <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
                </div>
                {totals.amountPaid > 0 && (
-                  <div className="flex justify-between text-sm text-slate-600 pt-2">
+                  <div className="flex justify-between text-xs text-slate-600 pt-1">
                      <span>{invoice.labels?.amountPaid || 'Amount Paid'}</span>
                      <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-lg font-bold text-slate-900 pt-2 border-t border-slate-100">
+               <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-100 mt-1">
                   <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
                   <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
@@ -138,24 +141,18 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
       </div>
 
       {/* Footer */}
-      <div className="border-t-2 border-slate-100 pt-8 mt-auto">
+      <div className="border-t-2 border-slate-100 pt-6 mt-auto">
          <div className="flex justify-between items-end">
             <div>
                {invoice.notes && (
-                  <div className="mb-6">
-                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{invoice.labels?.notes || 'Notes'}</h3>
-                     <p className="text-sm text-slate-600 whitespace-pre-wrap max-w-lg">{invoice.notes}</p>
+                  <div className="mb-4">
+                     <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">{invoice.labels?.notes || 'Notes'}</h3>
+                     <p className="text-xs text-slate-600 whitespace-pre-wrap max-w-lg leading-relaxed">{invoice.notes}</p>
                   </div>
                )}
-               {invoice.terms && (
-                  <div className="mb-6">
-                     <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{invoice.labels?.terms || 'Terms'}</h3>
-                     <p className="text-sm text-slate-600 whitespace-pre-wrap max-w-lg">{invoice.terms}</p>
-                  </div>
-               )}
-               <div className="text-xs text-slate-400">
+               <div className="text-[10px] text-slate-400 mt-4">
                   <p>Thank you for your business.</p>
-                  <p>{profile.name}</p>
+                  <p className="font-semibold">{profile.name}</p>
                </div>
             </div>
 
@@ -166,10 +163,10 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
                   rel="noreferrer"
                   data-pdf-link="true" // Marker for PDF generation
                   style={{ backgroundColor: profile.brandColor }}
-                  className="flex items-center gap-2 text-white px-6 py-3 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity shadow-md"
+                  className="flex items-center gap-2 text-white px-5 py-2.5 rounded-lg text-xs font-bold hover:opacity-90 transition-opacity shadow-sm"
                >
                   <span>Pay Invoice</span>
-                  <ExternalLink size={14} />
+                  <ExternalLink size={12} />
                </a>
             )}
          </div>
@@ -179,32 +176,32 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
 
 // --- Classic Template ---
 export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-16 flex flex-col text-slate-900 bg-orange-50/10 ${getFontClass(profile.fontFamily, 'font-serif')}`}>
+   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col text-slate-900 bg-orange-50/10 ${getFontClass(profile.fontFamily, 'font-serif')}`}>
       {/* Header */}
       <div
-         className="text-center border-b-4 border-double pb-8 mb-8"
+         className="text-center border-b-4 border-double pb-6 mb-6"
          style={{ borderColor: profile.brandColor }}
       >
          {profile.logoUrl && (
-            <img src={profile.logoUrl} alt="Logo" className="h-32 w-32 object-contain mx-auto mb-4" />
+            <img src={profile.logoUrl} alt="Logo" className="h-20 w-20 object-contain mx-auto mb-3" />
          )}
-         <h1 className="text-5xl font-bold text-slate-900 uppercase tracking-widest mb-2" style={{ color: profile.brandColor }}>{profile.name}</h1>
-         <div className="text-sm text-slate-600 whitespace-pre-wrap italic font-medium">
+         <h1 className="text-4xl font-bold text-slate-900 uppercase tracking-widest mb-1" style={{ color: profile.brandColor }}>{profile.name}</h1>
+         <div className="text-xs text-slate-600 whitespace-pre-wrap italic font-medium">
             {profile.address}
          </div>
       </div>
 
-      <div className="flex justify-between items-start mb-8 px-4">
+      <div className="flex justify-between items-start mb-6 px-4">
          <div className="w-1/3">
-            <h3 className="text-xs font-bold uppercase text-slate-500 border-b border-slate-300 pb-1 mb-2">Bill To:</h3>
-            <div className="text-sm leading-relaxed">
+            <h3 className="text-[10px] font-bold uppercase text-slate-500 border-b border-slate-300 pb-1 mb-2">Bill To:</h3>
+            <div className="text-xs leading-relaxed">
                <p className="font-bold">{client.name}</p>
                <p className="whitespace-pre-wrap">{client.address}</p>
             </div>
          </div>
-         <div className="text-center w-1/3 pt-4">
+         <div className="text-center w-1/3 pt-2">
             <span
-               className="inline-block px-6 py-2 border-2 text-2xl font-bold tracking-widest"
+               className="inline-block px-4 py-1.5 border-2 text-xl font-bold tracking-widest"
                style={{ borderColor: profile.brandColor, color: profile.brandColor }}
             >
                INVOICE
@@ -212,40 +209,43 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
          </div>
          <div className="w-1/3 text-right">
             <div className="inline-block text-left">
-               <div className="flex justify-between gap-8 border-b border-slate-200 py-1">
-                  <span className="font-bold text-sm text-slate-600">No:</span>
-                  <span className="text-sm">{invoice.number}</span>
+               <div className="flex justify-between gap-6 border-b border-slate-200 py-1">
+                  <span className="font-bold text-[10px] uppercase text-slate-600">No:</span>
+                  <span className="text-xs font-medium">{invoice.number}</span>
                </div>
-               <div className="flex justify-between gap-8 border-b border-slate-200 py-1">
-                  <span className="font-bold text-sm text-slate-600">Date:</span>
-                  <span className="text-sm">{invoice.issueDate}</span>
+               <div className="flex justify-between gap-6 border-b border-slate-200 py-1">
+                  <span className="font-bold text-[10px] uppercase text-slate-600">Date:</span>
+                  <span className="text-xs font-medium">{invoice.issueDate}</span>
                </div>
-               <div className="flex justify-between gap-8 border-b border-slate-200 py-1">
-                  <span className="font-bold text-sm text-slate-600">Due:</span>
-                  <span className="text-sm">{invoice.dueDate}</span>
+               <div className="flex justify-between gap-6 border-b border-slate-200 py-1">
+                  <span className="font-bold text-[10px] uppercase text-slate-600">Due:</span>
+                  <span className="text-xs font-medium">{invoice.dueDate}</span>
                </div>
             </div>
          </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1">
-         <table className="w-full border-2 mb-8" style={{ borderColor: profile.brandColor }}>
+      <div className="flex-1 px-4">
+         <table className="w-full border-2 mb-6" style={{ borderColor: profile.brandColor }}>
             <thead className="bg-slate-100">
                <tr>
-                  <th className="text-left py-2 px-4 border-r border-slate-300 font-bold text-sm uppercase">Description</th>
-                  <th className="text-center py-2 px-4 border-r border-slate-300 font-bold text-sm uppercase w-20">Qty</th>
-                  <th className="text-right py-2 px-4 border-r border-slate-300 font-bold text-sm uppercase w-32">Rate</th>
-                  <th className="text-right py-2 px-4 font-bold text-sm uppercase w-32">Total</th>
+                  <th className="text-left py-2 px-3 border-r border-slate-300 font-bold text-[10px] uppercase">Description</th>
+                  <th className="text-center py-2 px-3 border-r border-slate-300 font-bold text-[10px] uppercase w-16">Qty</th>
+                  <th className="text-right py-2 px-3 border-r border-slate-300 font-bold text-[10px] uppercase w-24">Rate</th>
+                  <th className="text-right py-2 px-3 font-bold text-[10px] uppercase w-28">Total</th>
                </tr>
             </thead>
             <tbody>
                {invoice.items.map((item, idx) => (
                   <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                     <td className="py-3 px-4 border-r border-slate-200 text-sm"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
-                     <td className="py-3 px-4 border-r border-slate-200 text-sm text-center">{item.quantity}</td>
-                     <td className="py-3 px-4 border-r border-slate-200 text-sm text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                     <td className="py-3 px-4 text-sm text-right font-medium">
+                     <td className="py-2 px-3 border-r border-slate-200 text-xs">
+                        <div className="font-medium">{item.description}</div>
+                        {item.details && <div className="text-[10px] text-slate-500 italic mt-0.5 whitespace-pre-wrap leading-tight">{item.details}</div>}
+                     </td>
+                     <td className="py-2 px-3 border-r border-slate-200 text-xs text-center align-top">{item.quantity}</td>
+                     <td className="py-2 px-3 border-r border-slate-200 text-xs text-right align-top">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                     <td className="py-2 px-3 text-xs text-right font-medium align-top">
                         {formatCurrency(item.quantity * item.unitPrice, invoice.currency)}
                      </td>
                   </tr>
@@ -254,24 +254,24 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
          </table>
       </div>
 
-      <div className="flex justify-between items-start px-4 mb-8 mt-auto">
+      <div className="flex justify-between items-start px-4 mb-6 mt-auto">
          <div className="w-1/2 pr-8">
             {invoice.notes && (
                <div>
-                  <h3 className="text-xs font-bold uppercase text-slate-500 mb-1">Notes</h3>
-                  <p className="text-sm text-slate-700 italic bg-slate-50 p-3 border border-slate-200">{invoice.notes}</p>
+                  <h3 className="text-[10px] font-bold uppercase text-slate-500 mb-1">Notes</h3>
+                  <p className="text-[10px] text-slate-700 italic bg-slate-50 p-2.5 border border-slate-200 leading-relaxed">{invoice.notes}</p>
                </div>
             )}
             {invoice.paymentLink && (
-               <div className="mt-6 p-4 border border-slate-300 bg-white inline-block">
-                  <p className="text-xs font-bold uppercase mb-2 text-slate-500">Payment Options</p>
+               <div className="mt-4 p-3 border border-slate-300 bg-white inline-block">
+                  <p className="text-[10px] font-bold uppercase mb-1 text-slate-500">Payment Options</p>
                   <a
                      href={invoice.paymentLink}
                      target="_blank"
                      rel="noreferrer"
                      data-pdf-link="true"
                      style={{ color: profile.brandColor, borderColor: profile.brandColor }}
-                     className="text-sm font-bold underline decoration-2 underline-offset-4 hover:opacity-80"
+                     className="text-xs font-bold underline decoration-1 underline-offset-2 hover:opacity-80"
                   >
                      Click here to pay online &rarr;
                   </a>
@@ -279,47 +279,47 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
             )}
          </div>
          <div className="w-1/3">
-            <div className="flex justify-between py-2 border-b border-slate-300">
-               <span className="font-bold text-sm">{invoice.labels?.subtotal || 'Subtotal'}:</span>
-               <span className="text-sm">{formatCurrency(totals.subtotal, invoice.currency)}</span>
+            <div className="flex justify-between py-1.5 border-b border-slate-300">
+               <span className="font-bold text-xs">{invoice.labels?.subtotal || 'Subtotal'}:</span>
+               <span className="text-xs">{formatCurrency(totals.subtotal, invoice.currency)}</span>
             </div>
             {totals.discountAmount > 0 && (
-               <div className="flex justify-between py-2 border-b border-slate-300">
-                  <span className="font-bold text-sm">{invoice.labels?.discount || 'Discount'}:</span>
-                  <span className="text-sm">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+               <div className="flex justify-between py-1.5 border-b border-slate-300">
+                  <span className="font-bold text-xs">{invoice.labels?.discount || 'Discount'}:</span>
+                  <span className="text-xs">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
                </div>
             )}
-            <div className="flex justify-between py-2 border-b border-slate-300">
-               <span className="font-bold text-sm">{invoice.labels?.tax || 'Tax'}:</span>
-               <span className="text-sm">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
+            <div className="flex justify-between py-1.5 border-b border-slate-300">
+               <span className="font-bold text-xs">{invoice.labels?.tax || 'Tax'}:</span>
+               <span className="text-xs">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
             </div>
             {totals.shipping > 0 && (
-               <div className="flex justify-between py-2 border-b border-slate-300">
-                  <span className="font-bold text-sm">{invoice.labels?.shipping || 'Shipping'}:</span>
-                  <span className="text-sm">{formatCurrency(totals.shipping, invoice.currency)}</span>
+               <div className="flex justify-between py-1.5 border-b border-slate-300">
+                  <span className="font-bold text-xs">{invoice.labels?.shipping || 'Shipping'}:</span>
+                  <span className="text-xs">{formatCurrency(totals.shipping, invoice.currency)}</span>
                </div>
             )}
             <div
-               className="flex justify-between py-3 border-b-4 border-double mt-1"
+               className="flex justify-between py-2 border-b-4 border-double mt-1"
                style={{ borderColor: profile.brandColor }}
             >
-               <span className="font-bold text-lg">{invoice.labels?.total || 'Total'}:</span>
-               <span className="font-bold text-lg" style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
+               <span className="font-bold text-base">{invoice.labels?.total || 'Total'}:</span>
+               <span className="font-bold text-base" style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
             </div>
             {totals.amountPaid > 0 && (
-               <div className="flex justify-between py-2 border-b border-slate-300">
-                  <span className="font-bold text-sm">{invoice.labels?.amountPaid || 'Amount Paid'}:</span>
-                  <span className="text-sm">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+               <div className="flex justify-between py-1.5 border-b border-slate-300">
+                  <span className="font-bold text-xs">{invoice.labels?.amountPaid || 'Amount Paid'}:</span>
+                  <span className="text-xs">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
                </div>
             )}
-            <div className="flex justify-between py-2 border-b border-slate-300">
-               <span className="font-bold text-sm">{invoice.labels?.balanceDue || 'Balance Due'}:</span>
-               <span className="text-sm font-bold">{formatCurrency(totals.balanceDue, invoice.currency)}</span>
+            <div className="flex justify-between py-1.5 border-b border-slate-300">
+               <span className="font-bold text-xs">{invoice.labels?.balanceDue || 'Balance Due'}:</span>
+               <span className="text-xs font-bold">{formatCurrency(totals.balanceDue, invoice.currency)}</span>
             </div>
          </div>
       </div>
 
-      <div className="text-center text-xs text-slate-500 pt-8 border-t border-slate-300">
+      <div className="text-center text-[10px] text-slate-500 pt-6 border-t border-slate-300">
          <p>{profile.email}</p>
       </div>
    </div>
@@ -331,93 +331,93 @@ export const StudioTemplate = ({ invoice, client, profile, totals }: TemplatePro
    <div className={`w-[794px] min-h-[1123px] flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       <div className="flex flex-1">
          {/* Left Accent Bar */}
-         <div className="w-12 h-full" style={{ backgroundColor: profile.brandColor }}></div>
+         <div className="w-8 h-full" style={{ backgroundColor: profile.brandColor }}></div>
          
-         <div className="flex-1 p-16 flex flex-col">
-            <div className="flex justify-between items-start mb-16">
+         <div className="flex-1 p-8 flex flex-col">
+            <div className="flex justify-between items-start mb-8">
                <div className="w-1/2">
                   {profile.logoUrl && (
-                     <img src={profile.logoUrl} alt="Logo" className="h-20 w-20 object-contain mb-6" />
+                     <img src={profile.logoUrl} alt="Logo" className="h-16 w-16 object-contain mb-4" />
                   )}
-                  <h1 className="text-4xl font-black uppercase tracking-tight text-slate-900 mb-2">{profile.name}</h1>
-                  <p className="text-xs text-slate-500 uppercase tracking-widest leading-loose max-w-xs">{profile.address}</p>
+                  <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900 mb-1">{profile.name}</h1>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-relaxed max-w-xs">{profile.address}</p>
                </div>
                <div className="text-right w-1/2">
-                  <h2 className="text-6xl font-black text-slate-100 mb-2 tracking-tighter">INVOICE</h2>
-                  <p className="text-2xl font-bold" style={{ color: profile.brandColor }}>#{invoice.number}</p>
+                  <h2 className="text-5xl font-black text-slate-100 mb-1 tracking-tighter">INVOICE</h2>
+                  <p className="text-xl font-bold" style={{ color: profile.brandColor }}>#{invoice.number}</p>
                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-12 mb-16">
-               <div className="p-6 bg-slate-50 border-l-4" style={{ borderColor: profile.brandColor }}>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Invoice To</h3>
-                  <p className="text-lg font-bold text-slate-900">{client.name}</p>
-                  <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap">{client.address}</p>
+            <div className="grid grid-cols-2 gap-8 mb-8">
+               <div className="p-4 bg-slate-50 border-l-4" style={{ borderColor: profile.brandColor }}>
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Invoice To</h3>
+                  <p className="text-sm font-bold text-slate-900">{client.name}</p>
+                  <p className="text-xs text-slate-600 mt-0.5 whitespace-pre-wrap leading-relaxed">{client.address}</p>
                </div>
                <div className="grid grid-cols-2 gap-4">
                   <div>
-                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Issue Date</h3>
-                     <p className="text-base font-bold text-slate-800">{invoice.issueDate}</p>
+                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Issue Date</h3>
+                     <p className="text-xs font-bold text-slate-800">{invoice.issueDate}</p>
                   </div>
                   <div>
-                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Due Date</h3>
-                     <p className="text-base font-bold text-slate-800">{invoice.dueDate}</p>
+                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Due Date</h3>
+                     <p className="text-xs font-bold text-slate-800">{invoice.dueDate}</p>
                   </div>
                </div>
             </div>
 
-            <div className="flex-1 mb-12">
-               <div className="flex text-xs font-bold uppercase tracking-widest text-slate-400 pb-4 border-b-2 border-slate-900">
+            <div className="flex-1 mb-8">
+               <div className="flex text-[10px] font-bold uppercase tracking-widest text-slate-400 pb-2 border-b-2 border-slate-900 mb-2">
                   <div className="flex-1">Description</div>
-                  <div className="w-20 text-right">Qty</div>
-                  <div className="w-32 text-right">Rate</div>
-                  <div className="w-32 text-right">Total</div>
+                  <div className="w-16 text-right">Qty</div>
+                  <div className="w-24 text-right">Rate</div>
+                  <div className="w-28 text-right">Total</div>
                </div>
                
                <div className="divide-y divide-slate-100">
                   {invoice.items.map((item) => (
-                     <div key={item.id} className="flex py-6 items-start">
-                        <div className="flex-1 pr-4">
-                           <p className="font-bold text-slate-800 text-sm">{item.description}</p>
-                           {item.details && <p className="text-xs text-slate-500 mt-1 whitespace-pre-wrap">{item.details}</p>}
+                     <div key={item.id} className="flex py-3 items-start">
+                        <div className="flex-1 pr-2">
+                           <p className="font-bold text-slate-800 text-xs">{item.description}</p>
+                           {item.details && <p className="text-[10px] text-slate-500 mt-0.5 whitespace-pre-wrap leading-tight">{item.details}</p>}
                         </div>
-                        <div className="w-20 text-right text-sm text-slate-600 font-medium">{item.quantity}</div>
-                        <div className="w-32 text-right text-sm text-slate-600 font-medium">{formatCurrency(item.unitPrice, invoice.currency)}</div>
-                        <div className="w-32 text-right text-sm font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
+                        <div className="w-16 text-right text-xs text-slate-600 font-medium">{item.quantity}</div>
+                        <div className="w-24 text-right text-xs text-slate-600 font-medium">{formatCurrency(item.unitPrice, invoice.currency)}</div>
+                        <div className="w-28 text-right text-xs font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
                      </div>
                   ))}
                </div>
             </div>
 
-            <div className="flex justify-end mb-16">
-               <div className="w-80">
-                  <div className="flex justify-between py-2 text-sm">
+            <div className="flex justify-end mb-8">
+               <div className="w-64">
+                  <div className="flex justify-between py-1.5 text-xs">
                      <span className="text-slate-500 font-medium">{invoice.labels?.subtotal || 'Subtotal'}</span>
                      <span className="font-bold">{formatCurrency(totals.subtotal, invoice.currency)}</span>
                   </div>
                   {totals.discountAmount > 0 && (
-                     <div className="flex justify-between py-2 text-sm">
+                     <div className="flex justify-between py-1.5 text-xs">
                         <span className="text-slate-500 font-medium">{invoice.labels?.discount || 'Discount'}</span>
                         <span className="font-bold text-red-500">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
                      </div>
                   )}
-                  <div className="flex justify-between py-2 text-sm border-b border-slate-200">
+                  <div className="flex justify-between py-1.5 text-xs border-b border-slate-200">
                      <span className="text-slate-500 font-medium">{invoice.labels?.tax || 'Tax'}</span>
                      <span className="font-bold">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                   </div>
-                  <div className="flex justify-between py-6 text-2xl font-black">
+                  <div className="flex justify-between py-4 text-xl font-black">
                      <span>{invoice.labels?.total || 'Total'}</span>
                      <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
                   </div>
                </div>
             </div>
 
-            <div className="mt-auto border-t-2 border-slate-900 pt-8 flex justify-between items-end">
+            <div className="mt-auto border-t-2 border-slate-900 pt-6 flex justify-between items-end">
                <div className="w-2/3">
                   {invoice.notes && (
-                     <div className="mb-4">
-                        <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Notes</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed max-w-md">{invoice.notes}</p>
+                     <div className="mb-2">
+                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Notes</h4>
+                        <p className="text-[10px] text-slate-600 leading-relaxed max-w-md">{invoice.notes}</p>
                      </div>
                   )}
                </div>
@@ -428,7 +428,7 @@ export const StudioTemplate = ({ invoice, client, profile, totals }: TemplatePro
                      rel="noreferrer"
                      data-pdf-link="true"
                      style={{ backgroundColor: profile.brandColor }}
-                     className="px-8 py-4 text-white text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
+                     className="px-6 py-3 text-white text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-opacity"
                   >
                      Pay Invoice Online
                   </a>
@@ -445,36 +445,36 @@ export const CorporateTemplate = ({ invoice, client, profile, totals }: Template
       {/* Header Strip */}
       <div className="h-3 w-full" style={{ backgroundColor: profile.brandColor }}></div>
       
-      <div className="p-16 flex-1 flex flex-col">
-         <div className="flex justify-between items-start border-b-2 border-slate-100 pb-12 mb-12">
+      <div className="p-8 flex-1 flex flex-col">
+         <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6 mb-6">
             <div className="flex items-center gap-6">
                {profile.logoUrl && (
-                  <img src={profile.logoUrl} alt="Logo" className="h-24 w-24 object-contain" />
+                  <img src={profile.logoUrl} alt="Logo" className="h-16 w-16 object-contain" />
                )}
                <div>
-                  <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{profile.name}</h1>
-                  <p className="text-sm text-slate-500 mt-1 whitespace-pre-wrap">{profile.address}</p>
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{profile.name}</h1>
+                  <p className="text-[10px] text-slate-500 mt-1 whitespace-pre-wrap">{profile.address}</p>
                </div>
             </div>
             <div className="text-right">
-               <h2 className="text-4xl font-light text-slate-400 mb-2 uppercase tracking-widest">Invoice</h2>
-               <div className="inline-block bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                  <p className="text-sm text-slate-500 font-bold uppercase tracking-wider mb-1">Invoice Number</p>
-                  <p className="text-xl font-bold text-slate-900">#{invoice.number}</p>
+               <h2 className="text-2xl font-light text-slate-400 mb-2 uppercase tracking-widest">Invoice</h2>
+               <div className="inline-block bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">Invoice Number</p>
+                  <p className="text-sm font-bold text-slate-900">#{invoice.number}</p>
                </div>
             </div>
          </div>
 
-         <div className="grid grid-cols-2 gap-12 mb-12">
+         <div className="grid grid-cols-2 gap-8 mb-6">
             <div>
-               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Billed To</h3>
-               <p className="text-lg font-bold text-slate-900">{client.name}</p>
-               <p className="text-sm text-slate-600 mt-1 whitespace-pre-wrap leading-relaxed">{client.address}</p>
-               <p className="text-sm text-slate-600 mt-1">{client.email}</p>
+               <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1">Billed To</h3>
+               <p className="text-sm font-bold text-slate-900">{client.name}</p>
+               <p className="text-[10px] text-slate-600 mt-0.5 whitespace-pre-wrap leading-relaxed">{client.address}</p>
+               <p className="text-[10px] text-slate-600 mt-0.5">{client.email}</p>
             </div>
             <div>
-               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Invoice Details</h3>
-               <div className="grid grid-cols-2 gap-y-4 text-sm">
+               <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1">Invoice Details</h3>
+               <div className="grid grid-cols-2 gap-y-2 text-[10px]">
                   <span className="font-bold text-slate-500">Date of Issue:</span>
                   <span className="text-right font-medium text-slate-900">{invoice.issueDate}</span>
                   <span className="font-bold text-slate-500">Due Date:</span>
@@ -489,70 +489,70 @@ export const CorporateTemplate = ({ invoice, client, profile, totals }: Template
             </div>
          </div>
 
-         <table className="w-full mb-12">
+         <table className="w-full mb-6">
             <thead>
                <tr>
-                  <th className="text-left py-3 px-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-widest rounded-l-lg">Description</th>
-                  <th className="text-right py-3 px-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-widest w-24">Qty</th>
-                  <th className="text-right py-3 px-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-widest w-32">Unit Price</th>
-                  <th className="text-right py-3 px-4 bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-widest w-32 rounded-r-lg">Amount</th>
+                  <th className="text-left py-2 px-3 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-widest rounded-l-lg">Description</th>
+                  <th className="text-right py-2 px-3 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-16">Qty</th>
+                  <th className="text-right py-2 px-3 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-24">Unit Price</th>
+                  <th className="text-right py-2 px-3 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-widest w-28 rounded-r-lg">Amount</th>
                </tr>
             </thead>
             <tbody>
                {invoice.items.map((item, idx) => (
                   <tr key={item.id} className={idx % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'}>
-                     <td className="py-4 px-4">
-                        <div className="font-bold text-slate-800 text-sm">{item.description}</div>
-                        {item.details && <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap">{item.details}</div>}
+                     <td className="py-2 px-3">
+                        <div className="font-bold text-slate-800 text-xs">{item.description}</div>
+                        {item.details && <div className="text-[10px] text-slate-500 mt-0.5 whitespace-pre-wrap">{item.details}</div>}
                      </td>
-                     <td className="py-4 px-4 text-right text-sm text-slate-600">{item.quantity}</td>
-                     <td className="py-4 px-4 text-right text-sm text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                     <td className="py-4 px-4 text-right text-sm font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
+                     <td className="py-2 px-3 text-right text-xs text-slate-600 align-top">{item.quantity}</td>
+                     <td className="py-2 px-3 text-right text-xs text-slate-600 align-top">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                     <td className="py-2 px-3 text-right text-xs font-bold text-slate-900 align-top">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
                   </tr>
                ))}
             </tbody>
          </table>
 
-         <div className="flex justify-end mb-16">
-            <div className="w-80">
-               <div className="flex justify-between py-2 text-sm px-4">
+         <div className="flex justify-end mb-8">
+            <div className="w-64">
+               <div className="flex justify-between py-1 text-xs px-3">
                   <span className="text-slate-500 font-bold">{invoice.labels?.subtotal || 'Subtotal'}</span>
                   <span className="font-medium text-slate-900">{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
                {totals.discountAmount > 0 && (
-                  <div className="flex justify-between py-2 text-sm px-4">
+                  <div className="flex justify-between py-1 text-xs px-3">
                      <span className="text-slate-500 font-bold">{invoice.labels?.discount || 'Discount'}</span>
                      <span className="font-medium text-slate-900">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between py-2 text-sm px-4">
+               <div className="flex justify-between py-1 text-xs px-3">
                   <span className="text-slate-500 font-bold">{invoice.labels?.tax || 'Tax'}</span>
                   <span className="font-medium text-slate-900">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
-               <div className="flex justify-between py-4 text-lg font-bold px-4 mt-2 rounded-lg" style={{ backgroundColor: profile.brandColor + '1A', color: profile.brandColor }}>
+               <div className="flex justify-between py-2 text-sm font-bold px-3 mt-1 rounded-lg" style={{ backgroundColor: profile.brandColor + '1A', color: profile.brandColor }}>
                   <span>{invoice.labels?.total || 'Total'}</span>
                   <span>{formatCurrency(totals.total, invoice.currency)}</span>
                </div>
                {totals.amountPaid > 0 && (
-                  <div className="flex justify-between py-2 text-sm px-4 mt-2">
+                  <div className="flex justify-between py-1 text-xs px-3 mt-1">
                      <span className="text-slate-500 font-bold">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
                      <span className="font-medium text-slate-900">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between py-2 text-base font-bold px-4 border-t-2 border-slate-100 mt-2">
+               <div className="flex justify-between py-1.5 text-xs font-bold px-3 border-t-2 border-slate-100 mt-1">
                   <span className="text-slate-800">{invoice.labels?.balanceDue || 'Balance Due'}</span>
                   <span className="text-slate-900">{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
             </div>
          </div>
 
-         <div className="mt-auto border-t-2 border-slate-100 pt-8">
+         <div className="mt-auto border-t-2 border-slate-100 pt-6">
             <div className="flex justify-between items-end">
                <div className="w-2/3 pr-8">
                   {invoice.notes && (
-                     <div className="mb-4">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Notes & Terms</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
+                     <div className="mb-2">
+                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Notes & Terms</h4>
+                        <p className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
                      </div>
                   )}
                </div>
@@ -564,7 +564,7 @@ export const CorporateTemplate = ({ invoice, client, profile, totals }: Template
                         rel="noreferrer"
                         data-pdf-link="true"
                         style={{ backgroundColor: profile.brandColor }}
-                        className="inline-block px-6 py-3 text-white text-sm font-bold rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                        className="inline-block px-4 py-2.5 text-white text-[10px] font-bold uppercase rounded-lg shadow-sm hover:shadow-md transition-shadow"
                      >
                         Pay Invoice Securely
                      </a>
@@ -576,117 +576,120 @@ export const CorporateTemplate = ({ invoice, client, profile, totals }: Template
    </div>
 );
 export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-16 flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       {/* Header Grid */}
-      <div className="grid grid-cols-2 gap-8 border-b pb-8 mb-8" style={{ borderColor: profile.brandColor }}>
+      <div className="grid grid-cols-2 gap-6 border-b pb-6 mb-6" style={{ borderColor: profile.brandColor }}>
          <div>
-            <h1 className="text-6xl font-display font-bold mb-4 tracking-tight" style={{ color: profile.brandColor }}>{profile.name}</h1>
-            <div className="text-xs leading-relaxed text-slate-600">
+            <h1 className="text-4xl font-display font-bold mb-3 tracking-tight" style={{ color: profile.brandColor }}>{profile.name}</h1>
+            <div className="text-[10px] leading-relaxed text-slate-600">
                <p>{profile.email}</p>
                <p className="whitespace-pre-wrap">{profile.address}</p>
             </div>
          </div>
          <div className="text-right flex flex-col justify-between">
-            <h2 className="text-xl font-bold" style={{ color: profile.brandColor }}>INVOICE</h2>
+            <h2 className="text-lg font-bold" style={{ color: profile.brandColor }}>INVOICE</h2>
             <div>
-               <p className="text-sm"><span className="text-slate-500 mr-2">No.</span> {invoice.number}</p>
-               <p className="text-sm"><span className="text-slate-500 mr-2">Date</span> {invoice.issueDate}</p>
+               <p className="text-xs"><span className="text-slate-500 mr-2">No.</span> {invoice.number}</p>
+               <p className="text-xs"><span className="text-slate-500 mr-2">Date</span> {invoice.issueDate}</p>
             </div>
          </div>
       </div>
 
       {/* Client & Meta */}
-      <div className="grid grid-cols-4 gap-4 mb-16">
+      <div className="grid grid-cols-4 gap-4 mb-8">
          <div className="col-span-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Billed To</h3>
-            <p className="text-sm font-medium mb-1">{client.name}</p>
-            <p className="text-xs text-slate-600 whitespace-pre-wrap">{client.address}</p>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Billed To</h3>
+            <p className="text-xs font-bold mb-0.5">{client.name}</p>
+            <p className="text-[10px] text-slate-600 whitespace-pre-wrap">{client.address}</p>
          </div>
          <div className="col-span-1">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Due Date</h3>
-            <p className="text-sm">{invoice.dueDate}</p>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Due Date</h3>
+            <p className="text-xs font-medium">{invoice.dueDate}</p>
          </div>
          <div className="col-span-1 text-right">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">Total Due</h3>
-            <p className="text-lg font-bold">{formatCurrency(totals.total, invoice.currency)}</p>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Total Due</h3>
+            <p className="text-sm font-bold">{formatCurrency(totals.total, invoice.currency)}</p>
          </div>
       </div>
 
       {/* Items */}
       <div className="flex-1">
-         <div className="flex text-xs font-bold text-slate-400 uppercase border-b border-slate-200 pb-2 mb-4">
+         <div className="flex text-[10px] font-bold text-slate-400 uppercase border-b border-slate-200 pb-2 mb-3">
             <div className="flex-1">Description</div>
-            <div className="w-20 text-right">Qty</div>
-            <div className="w-32 text-right">Price</div>
-            <div className="w-32 text-right">Amount</div>
+            <div className="w-16 text-right">Qty</div>
+            <div className="w-24 text-right">Price</div>
+            <div className="w-28 text-right">Amount</div>
          </div>
 
-         <div className="space-y-4">
+         <div className="space-y-1.5">
             {invoice.items.map((item) => (
-               <div key={item.id} className="flex text-sm">
-                  <div className="flex-1 font-medium"><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>
-                  <div className="w-20 text-right text-slate-600">{item.quantity}</div>
-                  <div className="w-32 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</div>
-                  <div className="w-32 text-right font-semibold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
+               <div key={item.id} className="flex text-xs items-start">
+                  <div className="flex-1 pr-2">
+                     <div className="font-semibold">{item.description}</div>
+                     {item.details && <div className="text-[10px] text-slate-500 mt-0.5 whitespace-pre-wrap leading-tight">{item.details}</div>}
+                  </div>
+                  <div className="w-16 text-right text-slate-600">{item.quantity}</div>
+                  <div className="w-24 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</div>
+                  <div className="w-28 text-right font-bold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
                </div>
             ))}
          </div>
       </div>
 
       {/* Footer Summary */}
-      <div className="border-t pt-8 mt-8 mt-auto" style={{ borderColor: profile.brandColor }}>
+      <div className="border-t pt-6 mt-6 mt-auto" style={{ borderColor: profile.brandColor }}>
          <div className="flex justify-between items-start">
             <div className="w-1/2 pr-8">
                {invoice.paymentLink && (
-                  <div className="text-white p-4 inline-block min-w-[200px] text-center" style={{ backgroundColor: profile.brandColor || '#000' }}>
-                     <p className="text-xs uppercase tracking-wider mb-1 opacity-70">Pay Online</p>
+                  <div className="text-white p-3 inline-block min-w-[160px] text-center rounded-sm mb-4" style={{ backgroundColor: profile.brandColor || '#000' }}>
+                     <p className="text-[10px] uppercase tracking-wider mb-1 opacity-80">Pay Online</p>
                      <a
                         href={invoice.paymentLink}
                         target="_blank"
                         rel="noreferrer"
                         data-pdf-link="true"
-                        className="font-bold underline decoration-1 underline-offset-4 hover:opacity-80"
+                        className="font-bold text-xs underline decoration-1 underline-offset-2 hover:opacity-80"
                      >
                         Link to Payment
                      </a>
                   </div>
                )}
                {invoice.notes && (
-                  <p className="text-xs text-slate-500 mt-4 max-w-xs">{invoice.notes}</p>
+                  <p className="text-[10px] text-slate-500 max-w-xs leading-relaxed">{invoice.notes}</p>
                )}
             </div>
-            <div className="w-1/2 max-w-xs ml-auto">
-               <div className="flex justify-between text-sm mb-2">
+            <div className="w-1/2 max-w-[240px] ml-auto">
+               <div className="flex justify-between text-xs mb-1.5">
                   <span className="text-slate-500">{invoice.labels?.subtotal || 'Subtotal'}</span>
-                  <span>{formatCurrency(totals.subtotal, invoice.currency)}</span>
+                  <span className="font-medium">{formatCurrency(totals.subtotal, invoice.currency)}</span>
                </div>
                {totals.discountAmount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
+                  <div className="flex justify-between text-xs mb-1.5">
                      <span className="text-slate-500">{invoice.labels?.discount || 'Discount'}</span>
-                     <span>-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
+                     <span className="font-medium">-{formatCurrency(totals.discountAmount, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-sm mb-4">
+               <div className="flex justify-between text-xs mb-3">
                   <span className="text-slate-500">{invoice.labels?.tax || 'Tax'}</span>
-                  <span>{formatCurrency(totals.taxAmount, invoice.currency)}</span>
+                  <span className="font-medium">{formatCurrency(totals.taxAmount, invoice.currency)}</span>
                </div>
                {totals.shipping > 0 && (
-                  <div className="flex justify-between text-sm mb-4">
+                  <div className="flex justify-between text-xs mb-3">
                      <span className="text-slate-500">{invoice.labels?.shipping || 'Shipping'}</span>
-                     <span>{formatCurrency(totals.shipping, invoice.currency)}</span>
+                     <span className="font-medium">{formatCurrency(totals.shipping, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-xl font-bold border-t border-slate-200 pt-4">
+               <div className="flex justify-between text-base font-bold border-t border-slate-200 pt-3">
                   <span>{invoice.labels?.total || 'Total'}</span>
                   <span style={{ color: profile.brandColor }}>{formatCurrency(totals.total, invoice.currency)}</span>
                </div>
                {totals.amountPaid > 0 && (
-                  <div className="flex justify-between text-sm mb-2 pt-2">
+                  <div className="flex justify-between text-xs mb-1.5 pt-1.5">
                      <span className="text-slate-500">{invoice.labels?.amountPaid || 'Amount Paid'}</span>
-                     <span>{formatCurrency(totals.amountPaid, invoice.currency)}</span>
+                     <span className="font-medium">{formatCurrency(totals.amountPaid, invoice.currency)}</span>
                   </div>
                )}
-               <div className="flex justify-between text-lg font-bold border-t border-slate-100 pt-2">
+               <div className="flex justify-between text-sm font-bold border-t border-slate-100 pt-1.5 mt-1">
                   <span>{invoice.labels?.balanceDue || 'Balance Due'}</span>
                   <span style={{ color: profile.brandColor }}>{formatCurrency(totals.balanceDue, invoice.currency)}</span>
                </div>
