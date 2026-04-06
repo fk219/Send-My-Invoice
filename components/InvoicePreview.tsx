@@ -1,7 +1,7 @@
 
 import React, { useMemo } from 'react';
 import { Invoice, Client, Profile } from '../types';
-import { ModernTemplate, ClassicTemplate, MinimalTemplate, BoldTemplate, AgencyTemplate, BoutiqueTemplate, TechTemplate, FinanceTemplate, CreativeTemplate, SimpleTemplate } from './InvoiceTemplates';
+import { ModernTemplate, ClassicTemplate, MinimalTemplate, CorporateTemplate, StudioTemplate } from './InvoiceTemplates';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -40,20 +40,10 @@ export default function InvoicePreview({ invoice, client, profile }: InvoicePrev
         return <ClassicTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
       case 'minimal':
         return <MinimalTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'bold':
-        return <BoldTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'agency':
-        return <AgencyTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'boutique':
-        return <BoutiqueTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'tech':
-        return <TechTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'finance':
-        return <FinanceTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'creative':
-        return <CreativeTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
-      case 'simple':
-        return <SimpleTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
+      case 'corporate':
+        return <CorporateTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
+      case 'studio':
+        return <StudioTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;
       case 'modern':
       default:
         return <ModernTemplate invoice={invoice} client={client} profile={profile} totals={totals} />;

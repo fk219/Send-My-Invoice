@@ -1,5 +1,5 @@
 
-export type TemplateType = 'modern' | 'classic' | 'minimal';
+export type TemplateType = 'modern' | 'classic' | 'minimal' | 'corporate' | 'studio';
 
 export interface Profile {
   id: string;

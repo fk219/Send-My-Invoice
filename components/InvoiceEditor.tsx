@@ -4,8 +4,8 @@ import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, Cred
 import { CURRENCIES, DEFAULT_LABELS } from '../constants';
 import InvoicePreview from './InvoicePreview';
 import { enhanceDescription, analyzeBrandColors } from '../services/geminiService';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface InvoiceEditorProps {
   profile: Profile;
@@ -352,45 +352,21 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       // Small delay to ensure any layout shifts are settled
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        windowWidth: 794,
-      });
+      const opt = {
+        margin:       0,
+        filename:     `${invoiceData.number}.pdf`,
+        image:        { type: 'jpeg', quality: 1.0 },
+        html2canvas:  { 
+          scale: 3, 
+          useCORS: true, 
+          letterRendering: true,
+          windowWidth: 794 
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
 
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Add the first page
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pdfHeight;
-
-      // Only add new pages if there is significant content left (more than 5mm)
-      // This prevents a blank page from being generated for a few pixels of margin/shadow
-      while (heightLeft > 5) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pdfHeight;
-      }
-
-      pdf.save(`${invoiceData.number}.pdf`);
+      // Generate and save using html2pdf.js
+      await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("PDF Generation failed:", err);
       alert(`PDF Generation failed: ${err instanceof Error ? err.message : 'Unknown error'}.`);
@@ -1101,7 +1077,8 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             width: '794px', // Standard A4 Width
             backgroundColor: 'white',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden' // Ensure it doesn't leak out bounds
           }}
         >
           <InvoicePreview invoice={invoiceData} client={client} profile={profile} />
