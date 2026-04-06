@@ -61,7 +61,7 @@ export default function InvoicePreview({ invoice, client, profile }: InvoicePrev
   };
 
   return (
-    <div className="w-full h-full min-h-[297mm]">
+    <div className="w-[794px] min-h-[1123px] flex flex-col bg-white">
       {renderTemplate()}
     </div>
   );

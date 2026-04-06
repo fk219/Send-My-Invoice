@@ -349,39 +349,47 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         })
       );
 
+      // Small delay to ensure any layout shifts are settled
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
         scale: 3,
         useCORS: true,
         logging: false,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        windowWidth: 1600,
+        windowWidth: 794,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'mm',
         format: 'a4'
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
       let heightLeft = imgHeight;
       let position = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= pageHeight;
+      // Add the first page
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pdfHeight;
 
-      while (heightLeft > 0) {
-        position -= pageHeight;
+      // Only add new pages if there is significant content left (more than 5mm)
+      // This prevents a blank page from being generated for a few pixels of margin/shadow
+      while (heightLeft > 5) {
+        position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
       }
+
       pdf.save(`${invoiceData.number}.pdf`);
     } catch (err) {
       console.error("PDF Generation failed:", err);
@@ -482,7 +490,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                       onChange={(e) => setInvoiceData({ ...invoiceData, template: e.target.value as TemplateType })}
                       className="w-full appearance-none bg-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-3 text-sm text-white focus:border-lime-500/50 focus:ring-1 focus:ring-lime-500/50 outline-none capitalize transition-all group-hover:border-white/20"
                     >
-                      {(['modern', 'classic', 'minimal', 'bold', 'agency', 'boutique', 'tech', 'finance', 'creative', 'simple'] as TemplateType[]).map(t => (
+                      {(['modern', 'classic', 'minimal'] as TemplateType[]).map(t => (
                         <option key={t} value={t} className="bg-slate-900 capitalize">{t} Template</option>
                       ))}
                     </select>
@@ -1090,8 +1098,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         <div
           id="pdf-render-container"
           style={{
-            width: '794px', // A4 width at 96 DPI
-            minHeight: '1123px', // A4 height at 96 DPI
+            width: '794px', // Standard A4 Width
             backgroundColor: 'white',
             display: 'flex',
             flexDirection: 'column'
