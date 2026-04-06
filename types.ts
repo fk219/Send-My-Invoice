@@ -26,11 +26,15 @@ export interface Client {
 export interface LineItem {
   id: string;
   description: string;
+  details?: string; // Multiline additional details
   quantity: number;
   unitPrice: number;
+  taxable?: boolean; // Line-item level tax
 }
 
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
+export type PaymentTerms = 'due_on_receipt' | 'net_15' | 'net_30' | 'net_60' | 'custom';
+
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'partial';
 
 export interface InvoiceLabel {
   title: string;
@@ -70,6 +74,7 @@ export interface Invoice {
 
   // Financials
   currency: string;
+  paymentTermType?: PaymentTerms;
   taxRate: number; // Kept for backward compatibility, but we'll use taxValue/taxType primarily
   taxType: 'percent' | 'amount';
   taxValue: number;

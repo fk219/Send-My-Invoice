@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Invoice, Client, Profile, LineItem, InvoiceStatus, TemplateType } from '../types';
-import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar } from 'lucide-react';
+import { Invoice, Client, Profile, LineItem, InvoiceStatus, TemplateType, PaymentTerms } from '../types';
+import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
 import { CURRENCIES, DEFAULT_LABELS } from '../constants';
 import InvoicePreview from './InvoicePreview';
 import { enhanceDescription, analyzeBrandColors } from '../services/geminiService';
@@ -109,6 +109,48 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     }));
   };
 
+  const handleTermsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const term = e.target.value as PaymentTerms;
+    const issue = new Date(invoiceData.issueDate);
+    let newDueDate = invoiceData.dueDate;
+
+    if (term === 'due_on_receipt') {
+      newDueDate = invoiceData.issueDate;
+    } else if (term === 'net_15') {
+      issue.setDate(issue.getDate() + 15);
+      newDueDate = issue.toISOString().split('T')[0];
+    } else if (term === 'net_30') {
+      issue.setDate(issue.getDate() + 30);
+      newDueDate = issue.toISOString().split('T')[0];
+    } else if (term === 'net_60') {
+      issue.setDate(issue.getDate() + 60);
+      newDueDate = issue.toISOString().split('T')[0];
+    }
+
+    setInvoiceData({ ...invoiceData, paymentTermType: term, dueDate: newDueDate });
+  };
+
+  const handleIssueDateChange = (newIssueDate: string) => {
+    const term = invoiceData.paymentTermType || 'custom';
+    let newDueDate = invoiceData.dueDate;
+    const issue = new Date(newIssueDate);
+
+    if (term === 'due_on_receipt') {
+      newDueDate = newIssueDate;
+    } else if (term === 'net_15') {
+      issue.setDate(issue.getDate() + 15);
+      newDueDate = issue.toISOString().split('T')[0];
+    } else if (term === 'net_30') {
+      issue.setDate(issue.getDate() + 30);
+      newDueDate = issue.toISOString().split('T')[0];
+    } else if (term === 'net_60') {
+      issue.setDate(issue.getDate() + 60);
+      newDueDate = issue.toISOString().split('T')[0];
+    }
+    
+    setInvoiceData({ ...invoiceData, issueDate: newIssueDate, dueDate: newDueDate });
+  };
+
   const addItem = () => {
     setInvoiceData(prev => ({
       ...prev,
@@ -121,6 +163,24 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       ...prev,
       items: prev.items.filter(item => item.id !== id)
     }));
+  };
+
+  const moveItemUp = (index: number) => {
+    if (index === 0) return;
+    setInvoiceData(prev => {
+      const newItems = [...prev.items];
+      [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const moveItemDown = (index: number) => {
+    if (index === invoiceData.items.length - 1) return;
+    setInvoiceData(prev => {
+      const newItems = [...prev.items];
+      [newItems[index + 1], newItems[index]] = [newItems[index], newItems[index + 1]];
+      return { ...prev, items: newItems };
+    });
   };
 
   const handleAIEnhance = async (itemId: string, currentText: string) => {
@@ -174,7 +234,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3, // High resolution for perfect PDF
         useCORS: true,
         logging: false,
         allowTaint: true,
@@ -205,11 +265,17 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
   // Calculations
   const subtotal = invoiceData.items.reduce((a, i) => a + (i.quantity * i.unitPrice), 0);
+  const taxableSubtotal = invoiceData.items.reduce((a, i) => a + (i.taxable !== false ? (i.quantity * i.unitPrice) : 0), 0);
+  
   const discount = showDiscount ? (invoiceData.discountType === 'percent' ? subtotal * (invoiceData.discountValue / 100) : invoiceData.discountValue) : 0;
-  const taxable = subtotal - discount;
-  const tax = showTax ? (invoiceData.taxType === 'percent' ? taxable * (invoiceData.taxValue / 100) : invoiceData.taxValue) : 0;
+  
+  const discountRatio = subtotal > 0 ? (discount / subtotal) : 0;
+  const taxableAfterDiscount = taxableSubtotal * (1 - discountRatio);
+
+  const tax = showTax ? (invoiceData.taxType === 'percent' ? taxableAfterDiscount * (invoiceData.taxValue / 100) : invoiceData.taxValue) : 0;
+  
   const shipping = showShipping ? (invoiceData.shipping || 0) : 0;
-  const total = taxable + tax + shipping;
+  const total = (subtotal - discount) + tax + shipping;
   const balanceDue = total - (showAmountPaid ? (invoiceData.amountPaid || 0) : 0);
 
   return (
@@ -333,10 +399,29 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     <input
                       type="date"
                       value={invoiceData.issueDate}
-                      onChange={(e) => setInvoiceData({ ...invoiceData, issueDate: e.target.value })}
+                      onChange={(e) => handleIssueDateChange(e.target.value)}
                       className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none [color-scheme:dark]"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Payment Terms</label>
+                  <div className="relative">
+                    <select
+                      value={invoiceData.paymentTermType || 'custom'}
+                      onChange={handleTermsChange}
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none appearance-none"
+                    >
+                      <option value="custom" className="bg-slate-900">Custom Date</option>
+                      <option value="due_on_receipt" className="bg-slate-900">Due on Receipt</option>
+                      <option value="net_15" className="bg-slate-900">Net 15</option>
+                      <option value="net_30" className="bg-slate-900">Net 30</option>
+                      <option value="net_60" className="bg-slate-900">Net 60</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
+                    </div>
                   </div>
                 </div>
                 <div className="group">
@@ -345,7 +430,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                     <input
                       type="date"
                       value={invoiceData.dueDate}
-                      onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value })}
+                      onChange={(e) => setInvoiceData({ ...invoiceData, dueDate: e.target.value, paymentTermType: 'custom' })}
                       className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none [color-scheme:dark]"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
@@ -385,17 +470,23 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                 <span className="w-1 h-4 bg-lime-500 rounded-full shadow-[0_0_10px_rgba(132,204,22,0.5)]"></span>
                 Line Items
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {invoiceData.items.map((item, index) => (
-                  <div key={item.id} className="flex gap-3 items-start bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group">
+                  <div key={item.id} className="flex gap-3 items-start bg-white/[0.02] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors group relative">
+                    {/* Controls */}
+                    <div className="absolute -left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => moveItemUp(index)} disabled={index === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ArrowUp size={14}/></button>
+                      <button onClick={() => moveItemDown(index)} disabled={index === invoiceData.items.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-30"><ArrowDown size={14}/></button>
+                    </div>
+
                     <div className="flex-1 space-y-3">
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Description"
+                          placeholder="Item Name / Description"
                           value={item.description}
                           onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                          className="flex-1 rounded-lg bg-transparent border-b border-white/10 p-2 text-sm text-white focus:border-lime-500/50 outline-none transition-colors placeholder:text-slate-600"
+                          className="flex-1 rounded-lg bg-transparent border-b border-white/10 p-2 text-sm text-white font-medium focus:border-lime-500/50 outline-none transition-colors placeholder:text-slate-600"
                         />
                         <button
                           onClick={() => handleAIEnhance(item.id, item.description)}
@@ -410,14 +501,24 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                           )}
                         </button>
                       </div>
-                      <div className="flex gap-4">
+                      
+                      <textarea
+                        placeholder="Additional details (optional)"
+                        value={item.details || ''}
+                        onChange={(e) => handleItemChange(item.id, 'details', e.target.value)}
+                        rows={1}
+                        className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-xs text-slate-300 focus:border-lime-500/50 outline-none transition-colors placeholder:text-slate-600 resize-none min-h-[40px]"
+                      />
+
+                      <div className="flex gap-4 items-end">
                         <div className="w-24">
                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Qty</label>
                           <input
                             type="number"
                             min="0"
+                            step="any"
                             value={item.quantity}
-                            onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value))}
+                            onChange={(e) => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                             className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white focus:border-lime-500/50 outline-none"
                           />
                         </div>
@@ -427,24 +528,36 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                           <input
                             type="number"
                             min="0"
+                            step="any"
                             value={item.unitPrice}
-                            onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value))}
+                            onChange={(e) => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
                             className="w-full rounded-lg bg-white/5 border border-white/10 p-2 text-sm text-white pl-6 focus:border-lime-500/50 outline-none"
                           />
                         </div>
+                        <div className="flex items-center gap-2 pb-2 pl-2">
+                          <input
+                            type="checkbox"
+                            id={`taxable-${item.id}`}
+                            checked={item.taxable !== false}
+                            onChange={(e) => handleItemChange(item.id, 'taxable', e.target.checked)}
+                            className="w-4 h-4 rounded bg-white/10 border-white/20 text-lime-500 focus:ring-lime-500 focus:ring-offset-slate-900"
+                          />
+                          <label htmlFor={`taxable-${item.id}`} className="text-xs text-slate-400 cursor-pointer">Taxable</label>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right pt-8 w-24">
-                      <div className="font-mono font-medium text-lime-400 text-lg">
+                    <div className="text-right pt-2 w-24 flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-slate-600 hover:text-red-400 p-1 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Remove Item"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <div className="font-mono font-medium text-lime-400 text-lg mt-auto pb-2">
                         {new Intl.NumberFormat('en-US', { style: 'currency', currency: invoiceData.currency }).format(item.quantity * item.unitPrice)}
                       </div>
                     </div>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="text-slate-600 hover:text-red-400 p-2 mt-7 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   </div>
                 ))}
               </div>

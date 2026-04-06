@@ -85,7 +85,7 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
             <tbody>
                {invoice.items.map((item) => (
                   <tr key={item.id} className="border-b border-slate-50">
-                     <td className="py-4 text-sm text-slate-800 font-medium">{item.description}</td>
+                     <td className="py-4 text-sm text-slate-800 font-medium"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                      <td className="py-4 text-sm text-slate-600 text-right">{item.quantity}</td>
                      <td className="py-4 text-sm text-slate-600 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                      <td className="py-4 text-sm text-slate-900 font-semibold text-right">
@@ -242,7 +242,7 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
             <tbody>
                {invoice.items.map((item, idx) => (
                   <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                     <td className="py-3 px-4 border-r border-slate-200 text-sm">{item.description}</td>
+                     <td className="py-3 px-4 border-r border-slate-200 text-sm"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                      <td className="py-3 px-4 border-r border-slate-200 text-sm text-center">{item.quantity}</td>
                      <td className="py-3 px-4 border-r border-slate-200 text-sm text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                      <td className="py-3 px-4 text-sm text-right font-medium">
@@ -376,7 +376,7 @@ export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplatePr
          <div className="space-y-4">
             {invoice.items.map((item) => (
                <div key={item.id} className="flex text-sm">
-                  <div className="flex-1 font-medium">{item.description}</div>
+                  <div className="flex-1 font-medium"><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>
                   <div className="w-20 text-right text-slate-600">{item.quantity}</div>
                   <div className="w-32 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</div>
                   <div className="w-32 text-right font-semibold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
@@ -506,7 +506,7 @@ export const BoldTemplate = ({ invoice, client, profile, totals }: TemplateProps
             <div className="divide-y divide-slate-50">
                {invoice.items.map((item) => (
                   <div key={item.id} className="flex py-4 items-center">
-                     <div className="flex-1 font-medium text-slate-800">{item.description}</div>
+                     <div className="flex-1 font-medium text-slate-800"><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>
                      <div className="w-24 text-right text-slate-500">{item.quantity}</div>
                      <div className="w-32 text-right text-slate-500">{formatCurrency(item.unitPrice, invoice.currency)}</div>
                      <div className="w-32 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</div>
@@ -648,7 +648,7 @@ export const AgencyTemplate = ({ invoice, client, profile, totals }: TemplatePro
                <tbody className="divide-y divide-zinc-800">
                   {invoice.items.map(item => (
                      <tr key={item.id}>
-                        <td className="py-6 pr-4 font-medium text-zinc-300">{item.description}</td>
+                        <td className="py-6 pr-4 font-medium text-zinc-300"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                         <td className="py-6 text-right text-zinc-500">{item.quantity}</td>
                         <td className="py-6 text-right text-zinc-500">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                         <td className="py-6 text-right font-bold text-white">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
@@ -766,7 +766,7 @@ export const BoutiqueTemplate = ({ invoice, client, profile, totals }: TemplateP
                <tbody>
                   {invoice.items.map(item => (
                      <tr key={item.id} className="border-b border-slate-100/50">
-                        <td className="py-4 pr-4">{item.description}</td>
+                        <td className="py-4 pr-4"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                         <td className="py-4 text-right text-slate-500 font-sans">{item.quantity}</td>
                         <td className="py-4 text-right text-slate-500 font-sans">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                         <td className="py-4 text-right font-medium font-sans">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
@@ -895,7 +895,7 @@ export const TechTemplate = ({ invoice, client, profile, totals }: TemplateProps
                <tbody className="divide-y divide-cyan-500/10">
                   {invoice.items.map(item => (
                      <tr key={item.id}>
-                        <td className="py-4 text-white font-bold">{item.description}</td>
+                        <td className="py-4 text-white font-bold"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                         <td className="py-4 text-right text-slate-400">{item.quantity}</td>
                         <td className="py-4 text-right text-slate-400">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                         <td className="py-4 text-right text-cyan-400">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
@@ -1003,7 +1003,7 @@ export const FinanceTemplate = ({ invoice, client, profile, totals }: TemplatePr
          <tbody className="divide-y divide-slate-200">
             {invoice.items.map((item, idx) => (
                <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
-                  <td className="py-4 px-4 font-medium">{item.description}</td>
+                  <td className="py-4 px-4 font-medium"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                   <td className="py-4 px-4 text-center text-slate-600">{item.quantity}</td>
                   <td className="py-4 px-4 text-right text-slate-600">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                   <td className="py-5 px-4 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>
@@ -1193,7 +1193,7 @@ export const SimpleTemplate = ({ invoice, client, profile, totals }: TemplatePro
          <tbody>
             {invoice.items.map(item => (
                <tr key={item.id} className="border-b border-slate-100">
-                  <td className="py-4 font-medium">{item.description}</td>
+                  <td className="py-4 font-medium"><div><div>{item.description}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</div>{item.details && <div className="text-xs opacity-70 mt-1 whitespace-pre-wrap leading-tight">{item.details}</div>}</td>
                   <td className="py-4 text-right">{item.quantity}</td>
                   <td className="py-4 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
                   <td className="py-4 text-right font-bold">{formatCurrency(item.quantity * item.unitPrice, invoice.currency)}</td>

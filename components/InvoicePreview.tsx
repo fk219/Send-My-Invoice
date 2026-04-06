@@ -12,11 +12,22 @@ interface InvoicePreviewProps {
 export default function InvoicePreview({ invoice, client, profile }: InvoicePreviewProps) {
   const totals = useMemo(() => {
     const subtotal = invoice.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    const taxableSubtotal = invoice.items.reduce((acc, item) => {
+      // If taxable is undefined, assume it's taxable for backward compatibility
+      const isTaxable = item.taxable !== false;
+      return acc + (isTaxable ? (item.quantity * item.unitPrice) : 0);
+    }, 0);
+
     const discountAmount = invoice.discountType === 'percent' ? subtotal * (invoice.discountValue / 100) : invoice.discountValue;
-    const taxable = subtotal - discountAmount;
-    const taxAmount = invoice.taxType === 'percent' ? taxable * (invoice.taxValue / 100) : invoice.taxValue;
+    
+    // Pro-rate discount against taxable subtotal if we want exact math, or just apply discount then tax
+    // Standard approach: discount is applied proportionally, so taxable amount after discount is:
+    const discountRatio = subtotal > 0 ? (discountAmount / subtotal) : 0;
+    const taxableAfterDiscount = taxableSubtotal * (1 - discountRatio);
+
+    const taxAmount = invoice.taxType === 'percent' ? taxableAfterDiscount * (invoice.taxValue / 100) : invoice.taxValue;
     const shipping = invoice.shipping || 0;
-    const total = taxable + taxAmount + shipping;
+    const total = (subtotal - discountAmount) + taxAmount + shipping;
     const amountPaid = invoice.amountPaid || 0;
     const balanceDue = total - amountPaid;
 
