@@ -321,14 +321,40 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     setGeneratingPdf(true);
 
     try {
+      const fonts = (document as any).fonts;
+      if (fonts?.ready) {
+        await fonts.ready;
+      }
+
+      const images = Array.from(element.querySelectorAll('img'));
+      await Promise.all(
+        images.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise<void>(resolve => {
+            const cleanup = () => {
+              img.removeEventListener('load', onLoad);
+              img.removeEventListener('error', onError);
+            };
+            const onLoad = () => {
+              cleanup();
+              resolve();
+            };
+            const onError = () => {
+              cleanup();
+              resolve();
+            };
+            img.addEventListener('load', onLoad);
+            img.addEventListener('error', onError);
+          });
+        })
+      );
+
       const canvas = await html2canvas(element, {
-        scale: 3, // High resolution for perfect PDF
+        scale: 3,
         useCORS: true,
         logging: false,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 794, // A4 width at 96 DPI
-        height: 1123, // A4 height at 96 DPI
         windowWidth: 1600,
       });
 
@@ -339,7 +365,23 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
         format: 'a4'
       });
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), undefined, 'FAST');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pageHeight;
+      }
       pdf.save(`${invoiceData.number}.pdf`);
     } catch (err) {
       console.error("PDF Generation failed:", err);
