@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Invoice, Client, Profile, LineItem, InvoiceStatus, TemplateType, PaymentTerms } from '../types';
-import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar, ArrowUp, ArrowDown, UserPlus, X } from 'lucide-react';
 import { CURRENCIES, DEFAULT_LABELS } from '../constants';
 import InvoicePreview from './InvoicePreview';
 import { enhanceDescription, analyzeBrandColors } from '../services/geminiService';
@@ -15,9 +15,10 @@ interface InvoiceEditorProps {
   initialData: Invoice | null;
   onSave: (invoice: Invoice) => void;
   onCancel: () => void;
+  onAddClient?: (client: Client) => void;
 }
 
-export default function InvoiceEditor({ profile, setProfile, clients, existingInvoices = [], initialData, onSave, onCancel }: InvoiceEditorProps) {
+export default function InvoiceEditor({ profile, setProfile, clients, existingInvoices = [], initialData, onSave, onCancel, onAddClient }: InvoiceEditorProps) {
   // --- Numbering Logic ---
   const generateNextInvoiceNumber = (format: string, invoices: Invoice[]) => {
     const currentYear = new Date().getFullYear().toString();
@@ -75,6 +76,27 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Inline Client Creation State
+  const [showAddClient, setShowAddClient] = useState(false);
+  const [newClient, setNewClient] = useState<Partial<Client>>({ name: '', email: '', address: '' });
+  const clientDropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleSaveNewClient = () => {
+    if (!newClient.name || !onAddClient) return;
+    
+    const clientToAdd: Client = {
+      id: `client-${Date.now()}`,
+      name: newClient.name,
+      email: newClient.email || '',
+      address: newClient.address || ''
+    };
+    
+    onAddClient(clientToAdd);
+    setInvoiceData({ ...invoiceData, clientId: clientToAdd.id });
+    setShowAddClient(false);
+    setNewClient({ name: '', email: '', address: '' });
+  };
+
   // Toggles for optional fields
   const [showDiscount, setShowDiscount] = useState(false);
   const [showTax, setShowTax] = useState(false);
@@ -82,12 +104,78 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
   const [showAmountPaid, setShowAmountPaid] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
 
+  // Auto-Save Status
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  // Auto-Save Effect
+  useEffect(() => {
+    if (!initialData) {
+      // Only auto-save if we are editing an existing draft or want to create a rolling draft
+      const timeoutId = setTimeout(() => {
+        setSaveStatus('saving');
+        localStorage.setItem('clarity_invoice_draft', JSON.stringify(invoiceData));
+        setTimeout(() => setSaveStatus('saved'), 500);
+      }, 1500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [invoiceData, initialData]);
+
+  // Load Draft if exists on initial mount
+  useEffect(() => {
+    if (!initialData) {
+      const savedDraft = localStorage.getItem('clarity_invoice_draft');
+      if (savedDraft) {
+        const confirmRestore = window.confirm("You have an unsaved invoice draft. Would you like to restore it?");
+        if (confirmRestore) {
+          try {
+            setInvoiceData(JSON.parse(savedDraft));
+          } catch(e) {
+            console.error("Failed to parse draft", e);
+          }
+        } else {
+          localStorage.removeItem('clarity_invoice_draft');
+        }
+      }
+    }
+  }, [initialData]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + S to Save
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        onSave(invoiceData);
+      }
+      // Cmd/Ctrl + Enter to Add Line Item
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        addItem();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [invoiceData, onSave]);
+
   // Initialize toggles based on data
   useEffect(() => {
     if (invoiceData.discountValue > 0) setShowDiscount(true);
     if (invoiceData.taxValue > 0) setShowTax(true);
     if (invoiceData.shipping > 0) setShowShipping(true);
     if (invoiceData.amountPaid > 0) setShowAmountPaid(true);
+  }, []);
+
+  // Close Add Client popover when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target as Node)) {
+        setShowAddClient(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Derived invoice state for previewing templates on hover
@@ -291,6 +379,15 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           </h2>
         </div>
         <div className="flex items-center gap-3">
+          {!initialData && saveStatus !== 'idle' && (
+            <div className="hidden sm:flex items-center gap-1 text-xs font-medium mr-4 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/5 transition-all">
+              {saveStatus === 'saving' ? (
+                <><div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mr-1" /> <span className="text-slate-400">Saving draft...</span></>
+              ) : (
+                <><Check size={12} className="text-lime-400 mr-1" /> <span className="text-slate-400">Draft saved locally</span></>
+              )}
+            </div>
+          )}
           <button
             onClick={handleDownloadPDF}
             disabled={generatingPdf}
@@ -380,17 +477,68 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                 </div>
                 <div className="group">
                   <label className="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest group-focus-within:text-lime-400 transition-colors">Client</label>
-                  <div className="relative">
+                  <div className="relative" ref={clientDropdownRef}>
                     <select
                       value={invoiceData.clientId}
                       onChange={handleClientChange}
-                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none appearance-none"
+                      className="w-full rounded-xl bg-white/[0.02] backdrop-blur-sm border border-white/10 p-3 text-sm text-white focus:ring-1 focus:ring-lime-500/50 focus:border-lime-500/50 transition-all outline-none appearance-none pr-10"
                     >
+                      <option value="" disabled className="bg-slate-900 text-slate-500">Select a client...</option>
                       {clients.map(c => <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>)}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 flex items-center gap-2">
                       <ChevronDown size={14} />
                     </div>
+                    {onAddClient && (
+                      <button 
+                        onClick={() => setShowAddClient(true)}
+                        className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-400 hover:text-lime-400 transition-colors p-1"
+                        title="Add New Client"
+                      >
+                        <UserPlus size={14} />
+                      </button>
+                    )}
+
+                    {/* Inline Add Client Popover */}
+                    {showAddClient && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-white/10 rounded-xl p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="text-xs font-bold text-lime-400 uppercase tracking-widest">New Client</h4>
+                          <button onClick={() => setShowAddClient(false)} className="text-slate-400 hover:text-white"><X size={14}/></button>
+                        </div>
+                        <div className="space-y-3">
+                          <input 
+                            type="text" 
+                            placeholder="Company or Client Name *" 
+                            value={newClient.name} 
+                            onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-lime-500 outline-none"
+                            autoFocus
+                          />
+                          <input 
+                            type="email" 
+                            placeholder="Email Address" 
+                            value={newClient.email} 
+                            onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-lime-500 outline-none"
+                          />
+                          <textarea 
+                            placeholder="Billing Address" 
+                            value={newClient.address} 
+                            onChange={(e) => setNewClient({...newClient, address: e.target.value})}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-lime-500 outline-none resize-none"
+                            rows={2}
+                          />
+                          <button 
+                            onClick={handleSaveNewClient}
+                            disabled={!newClient.name}
+                            className="w-full bg-lime-500 hover:bg-lime-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold text-xs uppercase tracking-widest py-2 rounded-lg transition-colors"
+                          >
+                            Save & Select Client
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="group">

@@ -57,6 +57,7 @@ export default function App() {
       }
       return [invoice, ...prev];
     });
+    localStorage.removeItem('clarity_invoice_draft'); // Clear draft on successful save
     setCurrentView('dashboard');
   };
 
@@ -80,6 +81,7 @@ export default function App() {
             initialData={editingInvoice}
             onSave={handleSaveInvoice}
             onCancel={() => setCurrentView('dashboard')}
+            onAddClient={(newClient) => setClients(prev => [...prev, newClient])}
           />
         );
       case 'clients':
