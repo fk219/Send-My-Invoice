@@ -362,7 +362,8 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
           letterRendering: true,
           windowWidth: 794 
         },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: 'avoid-all' }
       };
 
       // Generate and save using html2pdf.js

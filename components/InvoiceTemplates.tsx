@@ -23,7 +23,7 @@ const formatCurrency = (amount: number, currency: string = 'USD') => {
 
 // --- Modern Template ---
 export const ModernTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col justify-between text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1122px] p-8 flex flex-col justify-between text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       <div>
          {/* Header */}
          <div className="flex justify-between items-start mb-8">
@@ -176,7 +176,7 @@ export const ModernTemplate = ({ invoice, client, profile, totals }: TemplatePro
 
 // --- Classic Template ---
 export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col text-slate-900 bg-orange-50/10 ${getFontClass(profile.fontFamily, 'font-serif')}`}>
+   <div className={`w-[794px] min-h-[1122px] p-8 flex flex-col text-slate-900 bg-orange-50/10 ${getFontClass(profile.fontFamily, 'font-serif')}`}>
       {/* Header */}
       <div
          className="text-center border-b-4 border-double pb-6 mb-6"
@@ -328,7 +328,7 @@ export const ClassicTemplate = ({ invoice, client, profile, totals }: TemplatePr
 
 // --- Studio Template ---
 export const StudioTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1122px] flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       <div className="flex flex-1">
          {/* Left Accent Bar */}
          <div className="w-8 h-full" style={{ backgroundColor: profile.brandColor }}></div>
@@ -441,7 +441,7 @@ export const StudioTemplate = ({ invoice, client, profile, totals }: TemplatePro
 
 // --- Corporate Template ---
 export const CorporateTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] flex flex-col text-slate-800 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1122px] flex flex-col text-slate-800 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       {/* Header Strip */}
       <div className="h-3 w-full" style={{ backgroundColor: profile.brandColor }}></div>
       
@@ -576,7 +576,7 @@ export const CorporateTemplate = ({ invoice, client, profile, totals }: Template
    </div>
 );
 export const MinimalTemplate = ({ invoice, client, profile, totals }: TemplateProps) => (
-   <div className={`w-[794px] min-h-[1123px] p-8 flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
+   <div className={`w-[794px] min-h-[1122px] p-8 flex flex-col text-slate-900 bg-white ${getFontClass(profile.fontFamily, 'font-sans')}`}>
       {/* Header Grid */}
       <div className="grid grid-cols-2 gap-6 border-b pb-6 mb-6" style={{ borderColor: profile.brandColor }}>
          <div>
