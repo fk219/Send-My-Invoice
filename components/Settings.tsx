@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Profile } from '../types';
 import { Save, CreditCard, Hash, Globe, Sparkles, Type, Palette, Layout, AlertCircle, Upload } from 'lucide-react';
-import { analyzeBrandColors } from '../services/geminiService';
+import { analyzeBrandColors, getGeminiKey, setGeminiKey } from '../services/geminiService';
 import { GOOGLE_FONTS } from '../constants';
 
 interface SettingsProps {
@@ -13,6 +13,8 @@ export default function Settings({ profile, setProfile }: SettingsProps) {
    const [isAnalyzing, setIsAnalyzing] = useState(false);
    const [analysisSource, setAnalysisSource] = useState<string | null>(null);
    const [analysisError, setAnalysisError] = useState<string | null>(null);
+   const [geminiKey, setGeminiKeyState] = useState(() => getGeminiKey());
+   const [keySaved, setKeySaved] = useState(false);
 
    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -255,6 +257,49 @@ export default function Settings({ profile, setProfile }: SettingsProps) {
                      />
                      <p className="text-xs text-slate-500 mt-2 font-light">This link will be automatically added to all new invoices.</p>
                   </div>
+               </div>
+            </section>
+
+            {/* AI key — user supplied, browser only */}
+            <section className="bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm overflow-hidden">
+               <div className="p-6 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
+                  <div className="p-2 rounded-lg bg-lime-400/10 text-lime-400">
+                     <Sparkles size={20} />
+                  </div>
+                  <h2 className="font-semibold text-white tracking-wide">AI Assistant</h2>
+               </div>
+               <div className="p-8 space-y-4">
+                  <p className="text-xs text-slate-400 font-light">
+                     Optional. The app never ships with a Gemini key. Add your own key to enable
+                     description rewriting and brand analysis; it is stored only in this browser.
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                     <input
+                        type="password"
+                        value={geminiKey}
+                        onChange={(event) => {
+                           setGeminiKeyState(event.target.value);
+                           setKeySaved(false);
+                        }}
+                        placeholder="AIza..."
+                        autoComplete="off"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white font-mono focus:border-lime-500 outline-none placeholder:text-slate-600"
+                     />
+                     <button
+                        type="button"
+                        onClick={() => {
+                           setGeminiKey(geminiKey);
+                           setKeySaved(true);
+                        }}
+                        className="bg-white/10 text-white px-5 py-3 rounded-xl text-sm font-medium hover:bg-white/15 transition-colors"
+                     >
+                        {keySaved ? "Saved" : "Save key"}
+                     </button>
+                  </div>
+                  <p className="text-[11px] text-amber-300/90">
+                     Local-only prototype: invoices, clients and this key live in localStorage. Export a
+                     backup from the sidebar before clearing your browser data.
+                  </p>
                </div>
             </section>
 

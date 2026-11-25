@@ -9,6 +9,7 @@ export interface Profile {
   logoUrl: string;
   brandColor: string;
   taxId?: string;
+  phoneNumber?: string;
   currency: string;
   defaultPaymentLink?: string;
   invoiceFormat: string; // e.g., 'INV-{YYYY}-{NNNN}'
@@ -85,6 +86,7 @@ export interface Invoice {
 
   // Visuals
   template: TemplateType;
+  layout?: 'portrait' | 'landscape';
   paymentLink?: string;
 
   // Custom Labels

@@ -1,14 +1,30 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.API_KEY || ''; 
+const KEY_STORAGE = "clarity_gemini_key";
 
-// Initialize only if key is present, otherwise handled gracefully in UI
-let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
+export function getGeminiKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(KEY_STORAGE) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setGeminiKey(value: string): void {
+  if (typeof window === "undefined") return;
+  const trimmed = value.trim();
+  if (trimmed) localStorage.setItem(KEY_STORAGE, trimmed);
+  else localStorage.removeItem(KEY_STORAGE);
+}
+
+function client(): GoogleGenAI | null {
+  const apiKey = getGeminiKey();
+  return apiKey ? new GoogleGenAI({ apiKey }) : null;
 }
 
 export const enhanceDescription = async (roughDraft: string): Promise<string> => {
+  const ai = client();
   if (!ai) {
     console.warn("Gemini API Key missing");
     return roughDraft; 
@@ -34,6 +50,7 @@ export const enhanceDescription = async (roughDraft: string): Promise<string> =>
 };
 
 export const suggestInvoiceNumber = async (lastNumber: string): Promise<string> => {
+    const ai = client();
     if (!ai) return `INV-${Date.now()}`;
 
     try {
@@ -48,6 +65,7 @@ export const suggestInvoiceNumber = async (lastNumber: string): Promise<string> 
 }
 
 export const analyzeBrandColors = async (websiteUrl: string): Promise<{ color?: string, font?: 'sans' | 'serif', logo?: string, sourceUrl?: string }> => {
+  const ai = client();
   if (!ai || !websiteUrl) return {};
 
   try {

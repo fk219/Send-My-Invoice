@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, FileText, Users, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Layout, FileText, Users, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Menu, Download, Upload } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import InvoiceEditor from './components/InvoiceEditor';
 import ClientList from './components/ClientList';
@@ -19,6 +19,34 @@ export default function App() {
   const [clients, setClients] = useState<Client[]>(mockClients);
   const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const exportData = () => {
+    const payload = { version: 1, exportedAt: new Date().toISOString(), profile, clients, invoices };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `clarity-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = async (file: File) => {
+    try {
+      const parsed = JSON.parse(await file.text()) as {
+        profile?: Profile;
+        clients?: Client[];
+        invoices?: Invoice[];
+      };
+      if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup');
+      if (parsed.profile) setProfile(parsed.profile);
+      if (Array.isArray(parsed.clients)) setClients(parsed.clients);
+      if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
+    } catch {
+      window.alert('That file is not a valid Clarity backup.');
+    }
+  };
 
   // Hydrate from local storage (mock database)
   useEffect(() => {
@@ -164,7 +192,34 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+        <div className="p-4 border-t border-white/5 bg-white/[0.02] space-y-3">
+          <div className={`flex ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} transition-all`}>
+            <button
+              onClick={exportData}
+              title="Export a JSON backup"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-medium text-slate-300 bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              <Download size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Backup</span>}
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              title="Restore from a JSON backup"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-medium text-slate-300 bg-white/5 hover:bg-white/10 transition-colors"
+            >
+              <Upload size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Restore</span>}
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void importData(file);
+                event.target.value = '';
+              }}
+            />
+          </div>
           <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} transition-all`}>
             <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 overflow-hidden ring-2 ring-transparent group-hover:ring-lime-500/50 transition-all flex-shrink-0">
               <img src={profile.logoUrl || "https://picsum.photos/100/100"} alt="Profile" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
@@ -172,7 +227,7 @@ export default function App() {
             {!isSidebarCollapsed && (
               <div className="hidden lg:block text-sm overflow-hidden animate-in fade-in duration-300">
                 <p className="font-medium text-slate-200 truncate max-w-[120px] font-display tracking-wide">{profile.name}</p>
-                <p className="text-lime-500/70 text-xs font-light tracking-wider uppercase">Pro Plan</p>
+                <p className="text-amber-400/80 text-[10px] font-light tracking-wider uppercase">Local data only</p>
               </div>
             )}
           </div>
