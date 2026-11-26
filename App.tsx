@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, FileText, Users, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Menu, Download, Upload } from 'lucide-react';
+import { Layout, FileText, Users, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Menu, Download, Upload, BookOpen } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import InvoiceEditor from './components/InvoiceEditor';
 import ClientList from './components/ClientList';
 import Settings from './components/Settings';
+import Guide from './components/Guide';
+import ThemeToggle from './components/ThemeToggle';
 import { Invoice, Client, Profile } from './types';
 import { defaultProfile, mockClients, mockInvoices } from './constants';
 
 // Simple view router since we avoid full React Router for this constrained environment
-type View = 'dashboard' | 'invoices' | 'clients' | 'settings';
+type View = 'dashboard' | 'invoices' | 'clients' | 'settings' | 'guide';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -126,6 +128,8 @@ export default function App() {
             setProfile={setProfile}
           />
         );
+      case 'guide':
+        return <Guide />;
       default:
         return <div>Not Found</div>;
     }
@@ -189,10 +193,18 @@ export default function App() {
               label="Settings"
               collapsed={isSidebarCollapsed}
             />
+            <NavItem
+              active={currentView === 'guide'}
+              onClick={() => setCurrentView('guide')}
+              icon={<BookOpen size={20} />}
+              label="How it works"
+              collapsed={isSidebarCollapsed}
+            />
           </nav>
         </div>
 
         <div className="p-4 border-t border-white/5 bg-white/[0.02] space-y-3">
+          <ThemeToggle compact={isSidebarCollapsed} />
           <div className={`flex ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} transition-all`}>
             <button
               onClick={exportData}

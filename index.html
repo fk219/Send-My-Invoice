@@ -76,6 +76,138 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #84cc16;
     }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 8px;
+      background: rgba(148, 163, 184, 0.08);
+      color: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(148, 163, 184, 0.16);
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 2px solid #84cc16;
+      outline-offset: 2px;
+    }
+
+    /* Light theme for the app chrome. The invoice preview keeps its own paper. */
+    html[data-theme='light'] body {
+      background: #eef2f7;
+      color: #0f172a;
+    }
+
+    html[data-theme='light'] ::selection {
+      background: rgba(132, 204, 22, 0.25);
+      color: #1a2e05;
+    }
+
+    html[data-theme='light'] ::-webkit-scrollbar-track {
+      background: #e2e8f0;
+    }
+
+    html[data-theme='light'] ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+    }
+
+    html[data-theme='light'] [class*='bg-slate-950']:not(#invoice-preview-container *) {
+      background-color: #eef2f7 !important;
+    }
+
+    html[data-theme='light'] [class*='bg-slate-900']:not(#invoice-preview-container *) {
+      background-color: rgba(255, 255, 255, 0.72) !important;
+    }
+
+    html[data-theme='light'] [class*='bg-slate-800']:not(#invoice-preview-container *) {
+      background-color: #e2e8f0 !important;
+    }
+
+    html[data-theme='light'] [class*='bg-slate-700']:not(#invoice-preview-container *) {
+      background-color: #cbd5e1 !important;
+    }
+
+    html[data-theme='light'] [class*='bg-white/']:not(#invoice-preview-container *) {
+      background-color: rgba(15, 23, 42, 0.035) !important;
+    }
+
+    html[data-theme='light'] [class*='bg-black/']:not(#invoice-preview-container *) {
+      background-color: rgba(255, 255, 255, 0.72) !important;
+    }
+
+    html[data-theme='light'] [class*='border-white/']:not(#invoice-preview-container *) {
+      border-color: rgba(15, 23, 42, 0.1) !important;
+    }
+
+    html[data-theme='light'] [class*='border-slate-800']:not(#invoice-preview-container *),
+    html[data-theme='light'] [class*='border-slate-700']:not(#invoice-preview-container *) {
+      border-color: #d7dfe9 !important;
+    }
+
+    html[data-theme='light'] [class*='divide-white/']:not(#invoice-preview-container *) {
+      border-color: rgba(15, 23, 42, 0.08) !important;
+    }
+
+    html[data-theme='light'] [class*='text-white']:not(#invoice-preview-container *) {
+      color: #0f172a !important;
+    }
+
+    html[data-theme='light'] [class*='text-slate-100']:not(#invoice-preview-container *),
+    html[data-theme='light'] [class*='text-slate-200']:not(#invoice-preview-container *) {
+      color: #0f172a !important;
+    }
+
+    html[data-theme='light'] [class*='text-slate-300']:not(#invoice-preview-container *) {
+      color: #334155 !important;
+    }
+
+    html[data-theme='light'] [class*='text-slate-400']:not(#invoice-preview-container *) {
+      color: #475569 !important;
+    }
+
+    html[data-theme='light'] [class*='text-slate-500']:not(#invoice-preview-container *) {
+      color: #52606f !important;
+    }
+
+    html[data-theme='light'] [class*='text-slate-600']:not(#invoice-preview-container *) {
+      color: #334155 !important;
+    }
+
+    html[data-theme='light'] [class*='text-lime-400']:not(#invoice-preview-container *),
+    html[data-theme='light'] [class*='text-lime-500']:not(#invoice-preview-container *),
+    html[data-theme='light'] [class*='text-lime-300']:not(#invoice-preview-container *) {
+      color: #4d7c0f !important;
+    }
+
+    html[data-theme='light'] [class*='text-amber-400']:not(#invoice-preview-container *) {
+      color: #a16207 !important;
+    }
+
+    html[data-theme='light'] [class*='placeholder:text-slate-']:not(#invoice-preview-container *)::placeholder {
+      color: #8b98a8 !important;
+    }
+
+    html[data-theme='light'] [class*='color-scheme:dark']:not(#invoice-preview-container *) {
+      color-scheme: light !important;
+    }
+
+    html[data-theme='light'] #invoice-preview-container {
+      color-scheme: light;
+    }
   </style>
   <script type="importmap">
 {
@@ -93,6 +225,16 @@
 }
 </script>
   <link rel="stylesheet" href="/index.css">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('clarity.theme') || 'system';
+        var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      } catch (error) {}
+    })();
+  </script>
 </head>
 
 <body
