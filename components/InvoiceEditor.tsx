@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Invoice, Client, Profile, LineItem, InvoiceStatus, TemplateType, PaymentTerms } from '../types';
 import { Plus, Trash2, Download, Save, ArrowLeft, Sparkles, LayoutTemplate, CreditCard, ExternalLink, Link as LinkIcon, Copy, Check, Upload, Image as ImageIcon, Settings as SettingsIcon, ChevronDown, ChevronUp, RotateCcw, Eye, EyeOff, Palette, FileText, DollarSign, Calendar, ArrowUp, ArrowDown, UserPlus, X } from 'lucide-react';
 import { CURRENCIES, DEFAULT_LABELS } from '../constants';
+import { summarizeInvoice } from '../services/invoiceMath';
 import InvoicePreview from './InvoicePreview';
 import { enhanceDescription, analyzeBrandColors } from '../services/geminiService';
 // @ts-ignore
@@ -140,13 +141,32 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     }
   }, [initialData]);
 
+  // A paid invoice must not keep a stale balance. Saving a paid invoice writes
+  // the full total into amountPaid, so the PDF and dashboard agree.
+  const saveInvoice = useCallback(() => {
+    const next =
+      invoiceData.status === 'paid'
+        ? { ...invoiceData, amountPaid: summarizeInvoice(invoiceData).total }
+        : invoiceData;
+    onSave(next);
+  }, [invoiceData, onSave]);
+
+  // Keep the live preview honest while a paid invoice is being edited: a paid
+  // invoice cannot show a remaining balance.
+  useEffect(() => {
+    if (invoiceData.status !== 'paid') return;
+    const total = summarizeInvoice(invoiceData).total;
+    if (Math.abs((invoiceData.amountPaid || 0) - total) < 0.005) return;
+    setInvoiceData((current) => ({ ...current, amountPaid: total }));
+  }, [invoiceData]);
+
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + S to Save
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        onSave(invoiceData);
+        saveInvoice();
       }
       // Cmd/Ctrl + Enter to Add Line Item
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -157,7 +177,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [invoiceData, onSave]);
+  }, [saveInvoice]);
 
   // Initialize toggles based on data
   useEffect(() => {
@@ -188,7 +208,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
     setInvoiceData({ ...invoiceData, clientId: e.target.value });
   };
 
-  const handleItemChange = (id: string, field: keyof LineItem, value: string | number) => {
+  const handleItemChange = (id: string, field: keyof LineItem, value: string | number | boolean) => {
     setInvoiceData(prev => ({
       ...prev,
       items: prev.items.map(item =>
@@ -355,14 +375,14 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
       const opt = {
         margin:       0,
         filename:     `${invoiceData.number}.pdf`,
-        image:        { type: 'jpeg', quality: 1.0 },
+        image:        { type: 'jpeg' as const, quality: 1.0 },
         html2canvas:  { 
           scale: 3, 
           useCORS: true, 
           letterRendering: true,
           windowWidth: 794 
         },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' } as const,
         pagebreak:    { mode: 'avoid-all' }
       };
 
@@ -415,6 +435,33 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
               )}
             </div>
           )}
+          <div className="flex items-center gap-2 mr-2">
+            <label htmlFor="invoice-status" className="hidden sm:block text-[10px] uppercase tracking-wider text-slate-500">
+              Status
+            </label>
+            <select
+              id="invoice-status"
+              value={invoiceData.status}
+              onChange={(event) => {
+                const status = event.target.value as InvoiceStatus;
+                setInvoiceData((current) =>
+                  status === 'paid'
+                    ? {
+                        ...current,
+                        status,
+                        amountPaid: summarizeInvoice(current).total,
+                      }
+                    : { ...current, status },
+                );
+              }}
+              className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-lime-500/50"
+            >
+              <option value="draft">Draft</option>
+              <option value="sent">Sent</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
           <button
             onClick={handleDownloadPDF}
             disabled={generatingPdf}
@@ -428,7 +475,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
             <span className="hidden sm:inline font-light tracking-wide">Download PDF</span>
           </button>
           <button
-            onClick={() => onSave(invoiceData)}
+            onClick={saveInvoice}
             className="flex items-center gap-2 px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-slate-950 rounded-xl font-medium transition-all shadow-[0_4px_20px_rgba(132,204,22,0.3)] hover:shadow-[0_6px_30px_rgba(132,204,22,0.5)] hover:scale-[1.02] active:scale-[0.98]"
           >
             <Save size={18} />

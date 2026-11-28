@@ -49,14 +49,19 @@ This document describes what the application can do today, based on the current 
 
 - **Stats cards**
   - Total Revenue: sums totals of invoices marked `paid`
-  - Outstanding: sums totals of invoices marked `sent` plus `overdue`
-  - Overdue: sums totals of invoices marked `overdue`
-  - Note: totals here use `taxRate` (legacy field) and do not include newer `taxValue/taxType` logic yet.
+  - Outstanding: sums balances of invoices marked `sent`, `partial` or `overdue`
+  - Overdue: sums balances of invoices marked `overdue`
+  - Uses the same `summarizeInvoice` engine as the invoice preview (discount, tax, shipping and amount paid are included).
 - **Revenue chart**
-  - Currently uses mocked monthly data (hardcoded array), not real invoice aggregation yet.
-- **Recent invoices**
-  - Table listing invoices in memory (no pagination).
-  - Client name resolution is done using `mockClients` (not the real `clients` state), so the displayed name can diverge from what you added/edited in the Clients screen.
+  - Aggregates paid invoices by month for the last six months.
+- **Invoices**
+  - Table listing every invoice in memory (no pagination).
+  - Client name resolution uses the real `clients` state.
+  - `Email` opens a pre-filled invoice draft in the user's mail app; `Remind`
+    does the same for sent/overdue invoices. The PDF is downloaded and attached
+    manually — there is no server-side email provider.
+  - An invoice marked `sent` past its due date is displayed as `overdue`; the
+    saved status is not mutated.
 
 ## Clients
 
@@ -128,7 +133,7 @@ Settings are divided into three main sections: Brand & Appearance, Business Deta
 
 This is the main “SaaS-like” workflow: build an invoice, preview it live, export it, and save it.
 
-### A. Invoice Creation & Numbering
+### A. Invoice Creation, Status & Numbering
 
 - New invoices are initialized with:
   - `id = "inv-" + Date.now()`
@@ -136,8 +141,11 @@ This is the main “SaaS-like” workflow: build an invoice, preview it live, ex
   - default client (first client id if available)
   - issue date = today
   - due date = today + 14 days
+  - status = `draft`
   - default values for discount/tax/shipping/amountPaid
   - default labels (`DEFAULT_LABELS`)
+- The editor toolbar has a status selector: `draft`, `sent`, `paid` or `overdue`.
+  This is a manual lifecycle; there is no automatic overdue transition or email sending yet.
 - Invoice number generation:
   - Replaces `{YYYY}` with the current year
   - Finds existing invoices matching the resulting prefix and increments the numeric suffix
@@ -259,10 +267,9 @@ This list is about what is not implemented yet (but commonly expected in a SaaS 
 
 - **No backend / database** (everything is local to the browser).
 - **No authentication / multi-user support.**
-- **No invoice list page** (beyond the “Recent Invoices” table on the Dashboard; “View All” is not wired).
-- **Dashboard chart is mock data** (not based on invoices).
-- **Dashboard client names use mockClients**, not the real client list state.
-- **No email sending workflow** (download-only for PDFs).
+- **No separate invoice list page**; the Dashboard table lists every invoice.
+- **No automatic saved-status changes**; draft/sent/paid/overdue is selected manually. Overdue is derived for display.
+- **No server-side email sending**; Email and Remind open mail-client drafts and the PDF is attached manually.
 - **No recurring invoices**, quote/estimate flow, or “convert estimate to invoice”.
 - **No product/service catalog** (saved items).
 - **No robust currency conversion** for multi-currency reporting.

@@ -7,7 +7,7 @@ import Settings from './components/Settings';
 import Guide from './components/Guide';
 import ThemeToggle from './components/ThemeToggle';
 import { Invoice, Client, Profile } from './types';
-import { defaultProfile, mockClients, mockInvoices } from './constants';
+import { defaultProfile } from './constants';
 
 // Simple view router since we avoid full React Router for this constrained environment
 type View = 'dashboard' | 'invoices' | 'clients' | 'settings' | 'guide';
@@ -18,8 +18,8 @@ export default function App() {
 
   // Global State (In a real app, use Context or Redux/Zustand)
   const [profile, setProfile] = useState<Profile>(defaultProfile);
-  const [clients, setClients] = useState<Client[]>(mockClients);
-  const [invoices, setInvoices] = useState<Invoice[]>(mockInvoices);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +97,8 @@ export default function App() {
         return (
           <Dashboard
             invoices={invoices}
+            clients={clients}
+            profile={profile}
             onNewInvoice={handleCreateInvoice}
             onEditInvoice={handleEditInvoice}
           />
@@ -234,11 +236,17 @@ export default function App() {
           </div>
           <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} transition-all`}>
             <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 overflow-hidden ring-2 ring-transparent group-hover:ring-lime-500/50 transition-all flex-shrink-0">
-              <img src={profile.logoUrl || "https://picsum.photos/100/100"} alt="Profile" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+              {profile.logoUrl ? (
+                <img src={profile.logoUrl} alt="Profile" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-slate-300">
+                  {(profile.name?.trim().charAt(0) || 'C').toUpperCase()}
+                </div>
+              )}
             </div>
             {!isSidebarCollapsed && (
               <div className="hidden lg:block text-sm overflow-hidden animate-in fade-in duration-300">
-                <p className="font-medium text-slate-200 truncate max-w-[120px] font-display tracking-wide">{profile.name}</p>
+                <p className="font-medium text-slate-200 truncate max-w-[120px] font-display tracking-wide">{profile.name || 'Your business'}</p>
                 <p className="text-amber-400/80 text-[10px] font-light tracking-wider uppercase">Local data only</p>
               </div>
             )}

@@ -1,54 +1,65 @@
 import React, { useMemo } from 'react';
-import { Invoice } from '../types';
-import { statusColors, mockClients } from '../constants'; // Accessing mockClients for name resolution
+import { Client, Invoice, Profile } from '../types';
+import { formatMoney, summarizeInvoice } from '../services/invoiceMath';
+import { effectiveStatus, invoiceEmailHref, reminderEmailHref } from '../services/invoiceDelivery';
 import { Plus, ArrowUpRight, DollarSign, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardProps {
   invoices: Invoice[];
+  clients: Client[];
+  profile: Profile;
   onNewInvoice: () => void;
   onEditInvoice: (inv: Invoice) => void;
 }
 
-export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: DashboardProps) {
+export default function Dashboard({ invoices, clients, profile, onNewInvoice, onEditInvoice }: DashboardProps) {
+  const currency = profile.currency || 'USD';
 
   const stats = useMemo(() => {
     let totalRevenue = 0;
     let outstanding = 0;
     let overdue = 0;
+    let pendingCount = 0;
+    let overdueCount = 0;
 
     invoices.forEach(inv => {
-      const subtotal = inv.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-      const total = subtotal * (1 + inv.taxRate / 100);
+      const summary = summarizeInvoice(inv);
+      const status = effectiveStatus(inv);
 
-      if (inv.status === 'paid') totalRevenue += total;
-      if (inv.status === 'sent') outstanding += total;
-      if (inv.status === 'overdue') {
-        outstanding += total;
-        overdue += total;
+      if (status === 'paid') totalRevenue += summary.total;
+      if (status === 'sent' || status === 'partial') {
+        outstanding += summary.balanceDue;
+        pendingCount += 1;
+      }
+      if (status === 'overdue') {
+        outstanding += summary.balanceDue;
+        overdue += summary.balanceDue;
+        pendingCount += 1;
+        overdueCount += 1;
       }
     });
 
-    return { totalRevenue, outstanding, overdue };
+    return { totalRevenue, outstanding, overdue, pendingCount, overdueCount };
   }, [invoices]);
 
   const chartData = useMemo(() => {
-    // Simple mock aggregation for the chart
-    return [
-      { name: 'Jan', amount: 4000 },
-      { name: 'Feb', amount: 3000 },
-      { name: 'Mar', amount: 2000 },
-      { name: 'Apr', amount: 2780 },
-      { name: 'May', amount: 1890 },
-      { name: 'Jun', amount: 2390 },
-      { name: 'Jul', amount: 3490 },
-    ];
-  }, []);
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, index) => {
+      const month = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+      const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
+      const amount = invoices
+        .filter(inv => inv.status === 'paid' && inv.issueDate.startsWith(key))
+        .reduce((sum, inv) => sum + summarizeInvoice(inv).total, 0);
+      return {
+        name: month.toLocaleString('en-US', { month: 'short' }),
+        amount,
+      };
+    });
+  }, [invoices]);
 
-  const getClientName = (id: string) => {
-    const client = mockClients.find(c => c.id === id);
-    return client ? client.name : 'Unknown Client';
-  };
+  const getClient = (id: string) => clients.find(c => c.id === id);
+  const getClientName = (id: string) => getClient(id)?.name ?? 'No client selected';
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 pb-24">
@@ -70,22 +81,22 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Total Revenue"
-          amount={stats.totalRevenue}
+          amount={formatMoney(stats.totalRevenue, currency)}
           icon={<DollarSign className="text-lime-400" />}
-          trend="+12% from last month"
           color="lime"
         />
         <StatCard
           title="Outstanding"
-          amount={stats.outstanding}
+          amount={formatMoney(stats.outstanding, currency)}
           icon={<Clock className="text-amber-400" />}
-          trend="4 invoices pending"
+          trend={`${stats.pendingCount} invoice${stats.pendingCount === 1 ? '' : 's'} awaiting payment`}
           color="amber"
         />
         <StatCard
           title="Overdue"
-          amount={stats.overdue}
+          amount={formatMoney(stats.overdue, currency)}
           icon={<ArrowUpRight className="text-red-400" />}
+          trend={`${stats.overdueCount} overdue`}
           isAlert
           color="red"
         />
@@ -120,8 +131,10 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
       {/* Recent Invoices List */}
       <div className="bg-slate-900/50 rounded-2xl border border-white/5 backdrop-blur-xl overflow-hidden shadow-sm">
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
-          <h3 className="text-lg font-medium text-white font-display tracking-wide">Recent Invoices</h3>
-          <button className="text-xs text-lime-400 hover:text-lime-300 font-medium uppercase tracking-wider">View All</button>
+          <h3 className="text-lg font-medium text-white font-display tracking-wide">Invoices</h3>
+          <span className="text-xs text-slate-500 uppercase tracking-wider">
+            {invoices.length} total
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -137,35 +150,62 @@ export default function Dashboard({ invoices, onNewInvoice, onEditInvoice }: Das
             </thead>
             <tbody className="divide-y divide-white/5">
               {invoices.map((inv) => {
-                const subtotal = inv.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-                const total = subtotal * (1 + inv.taxRate / 100);
+                const total = summarizeInvoice(inv).total;
+                const status = effectiveStatus(inv);
+                const client = getClient(inv.clientId);
+                const canRemind = status === 'sent' || status === 'partial' || status === 'overdue';
 
                 return (
                   <tr key={inv.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-6 py-4 font-mono text-lime-400">{inv.number}</td>
                     <td className="px-6 py-4 text-slate-300 font-medium">{getClientName(inv.clientId)}</td>
                     <td className="px-6 py-4 text-slate-500">{inv.issueDate}</td>
-                    <td className="px-6 py-4 font-medium text-white">${total.toFixed(2)}</td>
+                    <td className="px-6 py-4 font-medium text-white">{formatMoney(total, inv.currency || currency)}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${inv.status === 'paid' ? 'bg-lime-400/10 text-lime-400 border-lime-400/20' :
-                        inv.status === 'sent' ? 'bg-blue-400/10 text-blue-400 border-blue-400/20' :
-                          inv.status === 'overdue' ? 'bg-red-400/10 text-red-400 border-red-400/20' :
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${status === 'paid' ? 'bg-lime-400/10 text-lime-400 border-lime-400/20' :
+                        status === 'sent' ? 'bg-blue-400/10 text-blue-400 border-blue-400/20' :
+                          status === 'overdue' ? 'bg-red-400/10 text-red-400 border-red-400/20' :
                             'bg-slate-400/10 text-slate-400 border-slate-400/20'
                         }`}>
-                        {inv.status}
+                        {status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => onEditInvoice(inv)}
-                        className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center justify-end gap-2 text-xs">
+                        <a
+                          href={invoiceEmailHref(inv, client, profile)}
+                          className="text-slate-500 hover:text-lime-300 transition-colors"
+                          title="Open an email draft in your mail app"
+                        >
+                          Email
+                        </a>
+                        {canRemind && (
+                          <a
+                            href={reminderEmailHref(inv, client, profile)}
+                            className="text-amber-400/80 hover:text-amber-300 transition-colors"
+                            title="Open a reminder draft in your mail app"
+                          >
+                            Remind
+                          </a>
+                        )}
+                        <button
+                          onClick={() => onEditInvoice(inv)}
+                          className="text-slate-500 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100"
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
               })}
+              {invoices.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                    No invoices yet. Create your first invoice to start tracking revenue.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -183,7 +223,7 @@ const StatCard = ({ title, amount, icon, trend, isAlert, color = 'lime' }: any) 
       </div>
     </div>
     <div>
-      <h4 className="text-3xl font-display font-medium text-white tracking-tight">${amount.toLocaleString()}</h4>
+      <h4 className="text-3xl font-display font-medium text-white tracking-tight">{amount}</h4>
       {trend && <p className="text-xs text-slate-500 mt-2 font-light">{trend}</p>}
     </div>
   </div>
