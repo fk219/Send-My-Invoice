@@ -35,6 +35,7 @@ export default function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const skipProfileSave = useRef(true);
+  const savingInvoice = useRef(false);
 
   const loadWorkspace = async (nextUser: AuthUser) => {
     const data = await api.bootstrap();
@@ -145,6 +146,8 @@ export default function App() {
   };
 
   const handleSaveInvoice = async (invoice: Invoice) => {
+    if (savingInvoice.current) return;
+    savingInvoice.current = true;
     try {
       setError(null);
       const exists = invoices.some((item) => item.id === invoice.id);
@@ -158,6 +161,8 @@ export default function App() {
       setCurrentView('dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the invoice.');
+    } finally {
+      savingInvoice.current = false;
     }
   };
 
