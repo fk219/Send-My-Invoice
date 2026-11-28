@@ -94,18 +94,28 @@ export default function App() {
     }
   };
 
+  const resetWorkspace = () => {
+    skipProfileSave.current = true;
+    setUser(null);
+    setProfile(defaultProfile);
+    setClients([]);
+    setInvoices([]);
+    setCurrentView('dashboard');
+  };
+
   const logout = async () => {
     try {
       await api.logout();
     } finally {
-      skipProfileSave.current = true;
-      setUser(null);
-      setProfile(defaultProfile);
-      setClients([]);
-      setInvoices([]);
-      setCurrentView('dashboard');
+      resetWorkspace();
     }
   };
+
+  useEffect(() => {
+    const handleUnauthorized = () => resetWorkspace();
+    window.addEventListener('clarity:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('clarity:unauthorized', handleUnauthorized);
+  }, []);
 
   const exportData = () => {
     const payload = {

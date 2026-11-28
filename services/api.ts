@@ -28,6 +28,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   const data = (await response.json().catch(() => ({}))) as { error?: string };
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('clarity:unauthorized'));
+    }
     throw new ApiError(response.status, data.error || 'The request failed.');
   }
   return data as T;
