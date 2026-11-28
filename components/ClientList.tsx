@@ -2,34 +2,53 @@ import React, { useState } from 'react';
 import { Client } from '../types';
 import { Plus, Trash, Edit, User } from 'lucide-react';
 
+type ClientInput = Pick<Client, 'name' | 'email' | 'address'>;
+
 interface ClientListProps {
   clients: Client[];
-  setClients: React.Dispatch<React.SetStateAction<Client[]>>;
+  onCreate: (input: ClientInput) => Promise<Client>;
+  onUpdate: (id: string, input: ClientInput) => Promise<Client>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function ClientList({ clients, setClients }: ClientListProps) {
+export default function ClientList({ clients, onCreate, onUpdate, onDelete }: ClientListProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentClient, setCurrentClient] = useState<Client>({ id: '', name: '', email: '', address: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentClient.id) {
-      setClients(prev => prev.map(c => c.id === currentClient.id ? currentClient : c));
-    } else {
-      setClients(prev => [...prev, { ...currentClient, id: `cli-${Date.now()}` }]);
+    setBusy(true);
+    setError(null);
+    try {
+      if (currentClient.id) {
+        await onUpdate(currentClient.id, currentClient);
+      } else {
+        await onCreate(currentClient);
+      }
+      setIsEditing(false);
+      setCurrentClient({ id: '', name: '', email: '', address: '' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the client.');
+    } finally {
+      setBusy(false);
     }
-    setIsEditing(false);
-    setCurrentClient({ id: '', name: '', email: '', address: '' });
   };
 
   const handleEdit = (client: Client) => {
     setCurrentClient(client);
+    setError(null);
     setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure?')) {
-      setClients(prev => prev.filter(c => c.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this client? Existing invoices keep their saved details.')) return;
+    setError(null);
+    try {
+      await onDelete(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete the client.');
     }
   };
 
@@ -41,7 +60,7 @@ export default function ClientList({ clients, setClients }: ClientListProps) {
           <p className="text-slate-400 font-light">Manage your client database.</p>
         </div>
         <button
-          onClick={() => { setCurrentClient({ id: '', name: '', email: '', address: '' }); setIsEditing(true); }}
+          onClick={() => { setCurrentClient({ id: '', name: '', email: '', address: '' }); setError(null); setIsEditing(true); }}
           className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-slate-950 px-6 py-3 rounded-xl font-medium transition-all shadow-[0_0_20px_rgba(132,204,22,0.3)] hover:shadow-[0_0_30px_rgba(132,204,22,0.5)] hover:scale-105 active:scale-95"
         >
           <Plus size={18} />
@@ -49,11 +68,22 @@ export default function ClientList({ clients, setClients }: ClientListProps) {
         </button>
       </div>
 
+      {error && !isEditing && (
+        <div role="alert" className="mb-6 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
+
       {isEditing && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0a0a0a] rounded-2xl border border-white/10 shadow-2xl max-w-md w-full p-8 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lime-400 to-transparent"></div>
             <h2 className="text-2xl font-display font-bold text-white mb-6 tracking-wide">{currentClient.id ? 'Edit Client' : 'New Client'}</h2>
+            {error && (
+              <div role="alert" className="mb-5 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-300">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSave} className="space-y-5">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Name</label>
@@ -69,7 +99,9 @@ export default function ClientList({ clients, setClients }: ClientListProps) {
               </div>
               <div className="flex gap-4 pt-4">
                 <button type="button" onClick={() => setIsEditing(false)} className="flex-1 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors font-medium">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-3 bg-lime-400 text-slate-950 rounded-xl hover:bg-lime-300 font-bold tracking-wide transition-all shadow-lg shadow-lime-400/20">Save Client</button>
+                <button type="submit" disabled={busy} className="flex-1 px-4 py-3 bg-lime-400 text-slate-950 rounded-xl hover:bg-lime-300 font-bold tracking-wide transition-all shadow-lg shadow-lime-400/20 disabled:opacity-50">
+                  {busy ? 'Saving…' : 'Save Client'}
+                </button>
               </div>
             </form>
           </div>
@@ -91,7 +123,7 @@ export default function ClientList({ clients, setClients }: ClientListProps) {
               <button onClick={() => handleEdit(client)} className="p-2 text-slate-500 hover:text-lime-400 hover:bg-lime-400/10 rounded-lg transition-colors">
                 <Edit size={16} />
               </button>
-              <button onClick={() => handleDelete(client.id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
+              <button onClick={() => void handleDelete(client.id)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors">
                 <Trash size={16} />
               </button>
             </div>

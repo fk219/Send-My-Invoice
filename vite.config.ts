@@ -6,6 +6,12 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY || 'http://localhost:8787',
+        changeOrigin: false,
+      },
+    },
   },
   plugins: [react()],
   // Never bake an AI provider key into the client bundle. The user supplies

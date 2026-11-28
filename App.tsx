@@ -1,30 +1,120 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Layout, FileText, Users, BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight, Menu, Download, Upload, BookOpen } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  BarChart3,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileText,
+  LogOut,
+  Settings as SettingsIcon,
+  Users,
+} from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import InvoiceEditor from './components/InvoiceEditor';
 import ClientList from './components/ClientList';
 import Settings from './components/Settings';
 import Guide from './components/Guide';
 import ThemeToggle from './components/ThemeToggle';
+import AuthScreen from './components/AuthScreen';
 import { Invoice, Client, Profile } from './types';
 import { defaultProfile } from './constants';
+import { api, type AuthUser } from './services/api';
 
-// Simple view router since we avoid full React Router for this constrained environment
 type View = 'dashboard' | 'invoices' | 'clients' | 'settings' | 'guide';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [booting, setBooting] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Global State (In a real app, use Context or Redux/Zustand)
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [clients, setClients] = useState<Client[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const importRef = useRef<HTMLInputElement>(null);
+  const skipProfileSave = useRef(true);
+
+  const loadWorkspace = async (nextUser: AuthUser) => {
+    const data = await api.bootstrap();
+    skipProfileSave.current = true;
+    setUser(nextUser);
+    setProfile(data.profile);
+    setClients(data.clients);
+    setInvoices(data.invoices);
+    setCurrentView('dashboard');
+  };
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { user: current } = await api.me();
+        const data = await api.bootstrap();
+        if (!alive) return;
+        skipProfileSave.current = true;
+        setUser(current);
+        setProfile(data.profile);
+        setClients(data.clients);
+        setInvoices(data.invoices);
+      } catch {
+        if (alive) setUser(null);
+      } finally {
+        if (alive) setBooting(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Settings are auto-saved, but the first profile load must not write the
+  // server's own data back.
+  useEffect(() => {
+    if (!user) return;
+    if (skipProfileSave.current) {
+      skipProfileSave.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      void api.saveProfile(profile).catch((err) => {
+        setError(err instanceof Error ? err.message : 'Could not save settings.');
+      });
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [profile, user]);
+
+  const handleAuthenticated = async (nextUser: AuthUser) => {
+    try {
+      setError(null);
+      await loadWorkspace(nextUser);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load your workspace.');
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } finally {
+      skipProfileSave.current = true;
+      setUser(null);
+      setProfile(defaultProfile);
+      setClients([]);
+      setInvoices([]);
+      setCurrentView('dashboard');
+    }
+  };
 
   const exportData = () => {
-    const payload = { version: 1, exportedAt: new Date().toISOString(), profile, clients, invoices };
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      profile,
+      clients,
+      invoices,
+    };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -34,43 +124,8 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const importData = async (file: File) => {
-    try {
-      const parsed = JSON.parse(await file.text()) as {
-        profile?: Profile;
-        clients?: Client[];
-        invoices?: Invoice[];
-      };
-      if (!parsed || typeof parsed !== 'object') throw new Error('Invalid backup');
-      if (parsed.profile) setProfile(parsed.profile);
-      if (Array.isArray(parsed.clients)) setClients(parsed.clients);
-      if (Array.isArray(parsed.invoices)) setInvoices(parsed.invoices);
-    } catch {
-      window.alert('That file is not a valid Clarity backup.');
-    }
-  };
-
-  // Hydrate from local storage (mock database)
-  useEffect(() => {
-    const savedProfile = localStorage.getItem('clarity_profile');
-    if (savedProfile) setProfile(JSON.parse(savedProfile));
-
-    const savedClients = localStorage.getItem('clarity_clients');
-    if (savedClients) setClients(JSON.parse(savedClients));
-
-    const savedInvoices = localStorage.getItem('clarity_invoices');
-    if (savedInvoices) setInvoices(JSON.parse(savedInvoices));
-  }, []);
-
-  // Persistence
-  useEffect(() => {
-    localStorage.setItem('clarity_profile', JSON.stringify(profile));
-    localStorage.setItem('clarity_clients', JSON.stringify(clients));
-    localStorage.setItem('clarity_invoices', JSON.stringify(invoices));
-  }, [profile, clients, invoices]);
-
   const handleCreateInvoice = () => {
-    setEditingInvoice(null); // Null means new invoice
+    setEditingInvoice(null);
     setCurrentView('invoices');
   };
 
@@ -79,16 +134,41 @@ export default function App() {
     setCurrentView('invoices');
   };
 
-  const handleSaveInvoice = (invoice: Invoice) => {
-    setInvoices(prev => {
-      const exists = prev.find(i => i.id === invoice.id);
-      if (exists) {
-        return prev.map(i => i.id === invoice.id ? invoice : i);
-      }
-      return [invoice, ...prev];
-    });
-    localStorage.removeItem('clarity_invoice_draft'); // Clear draft on successful save
-    setCurrentView('dashboard');
+  const handleSaveInvoice = async (invoice: Invoice) => {
+    try {
+      setError(null);
+      const exists = invoices.some((item) => item.id === invoice.id);
+      const result = exists ? await api.updateInvoice(invoice) : await api.createInvoice(invoice);
+      setInvoices((prev) =>
+        exists
+          ? prev.map((item) => (item.id === result.invoice.id ? result.invoice : item))
+          : [result.invoice, ...prev],
+      );
+      localStorage.removeItem('clarity_invoice_draft');
+      setCurrentView('dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save the invoice.');
+    }
+  };
+
+  const handleAddClient = async (input: Pick<Client, 'name' | 'email' | 'address'>) => {
+    const result = await api.createClient(input);
+    setClients((prev) => [...prev, result.client]);
+    return result.client;
+  };
+
+  const handleUpdateClient = async (
+    id: string,
+    input: Pick<Client, 'name' | 'email' | 'address'>,
+  ) => {
+    const result = await api.updateClient(id, input);
+    setClients((prev) => prev.map((client) => (client.id === id ? result.client : client)));
+    return result.client;
+  };
+
+  const handleDeleteClient = async (id: string) => {
+    await api.deleteClient(id);
+    setClients((prev) => prev.filter((client) => client.id !== id));
   };
 
   const renderContent = () => {
@@ -113,23 +193,20 @@ export default function App() {
             initialData={editingInvoice}
             onSave={handleSaveInvoice}
             onCancel={() => setCurrentView('dashboard')}
-            onAddClient={(newClient) => setClients(prev => [...prev, newClient])}
+            onAddClient={handleAddClient}
           />
         );
       case 'clients':
         return (
           <ClientList
             clients={clients}
-            setClients={setClients}
+            onCreate={handleAddClient}
+            onUpdate={handleUpdateClient}
+            onDelete={handleDeleteClient}
           />
         );
       case 'settings':
-        return (
-          <Settings
-            profile={profile}
-            setProfile={setProfile}
-          />
-        );
+        return <Settings profile={profile} setProfile={setProfile} />;
       case 'guide':
         return <Guide />;
       default:
@@ -137,13 +214,35 @@ export default function App() {
     }
   };
 
+  if (booting) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-300 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-sm">
+          <div className="w-4 h-4 border-2 border-lime-400 border-t-transparent rounded-full animate-spin" />
+          Loading your workspace…
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen onAuthenticated={handleAuthenticated} />;
+  }
+
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-200 font-sans selection:bg-lime-500/30">
-      {/* Background Gradient - Aurora Effect */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-lime-900/10 via-slate-950/0 to-slate-950/0 pointer-events-none" />
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-blue-900/5 via-slate-950/0 to-slate-950/0 pointer-events-none" />
 
-      {/* Sidebar */}
+      {error && (
+        <div className="fixed right-4 top-4 z-50 flex max-w-md items-start gap-3 rounded-xl border border-red-400/20 bg-red-950/90 px-4 py-3 text-sm text-red-200 shadow-xl">
+          <span className="flex-1">{error}</span>
+          <button type="button" onClick={() => setError(null)} className="text-red-300 hover:text-white">
+            ×
+          </button>
+        </div>
+      )}
+
       <aside
         className={`${isSidebarCollapsed ? 'w-20' : 'w-20 lg:w-64'} flex-shrink-0 flex flex-col justify-between sticky top-0 h-screen border-r border-white/5 bg-slate-900/50 backdrop-blur-xl z-20 transition-all duration-300 ease-in-out`}
       >
@@ -167,41 +266,11 @@ export default function App() {
           </div>
 
           <nav className="p-4 space-y-2 mt-4">
-            <NavItem
-              active={currentView === 'dashboard'}
-              onClick={() => setCurrentView('dashboard')}
-              icon={<BarChart3 size={20} />}
-              label="Dashboard"
-              collapsed={isSidebarCollapsed}
-            />
-            <NavItem
-              active={currentView === 'invoices'}
-              onClick={handleCreateInvoice}
-              icon={<FileText size={20} />}
-              label="New Invoice"
-              collapsed={isSidebarCollapsed}
-            />
-            <NavItem
-              active={currentView === 'clients'}
-              onClick={() => setCurrentView('clients')}
-              icon={<Users size={20} />}
-              label="Clients"
-              collapsed={isSidebarCollapsed}
-            />
-            <NavItem
-              active={currentView === 'settings'}
-              onClick={() => setCurrentView('settings')}
-              icon={<SettingsIcon size={20} />}
-              label="Settings"
-              collapsed={isSidebarCollapsed}
-            />
-            <NavItem
-              active={currentView === 'guide'}
-              onClick={() => setCurrentView('guide')}
-              icon={<BookOpen size={20} />}
-              label="How it works"
-              collapsed={isSidebarCollapsed}
-            />
+            <NavItem active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} icon={<BarChart3 size={20} />} label="Dashboard" collapsed={isSidebarCollapsed} />
+            <NavItem active={currentView === 'invoices'} onClick={handleCreateInvoice} icon={<FileText size={20} />} label="New Invoice" collapsed={isSidebarCollapsed} />
+            <NavItem active={currentView === 'clients'} onClick={() => setCurrentView('clients')} icon={<Users size={20} />} label="Clients" collapsed={isSidebarCollapsed} />
+            <NavItem active={currentView === 'settings'} onClick={() => setCurrentView('settings')} icon={<SettingsIcon size={20} />} label="Settings" collapsed={isSidebarCollapsed} />
+            <NavItem active={currentView === 'guide'} onClick={() => setCurrentView('guide')} icon={<BookOpen size={20} />} label="How it works" collapsed={isSidebarCollapsed} />
           </nav>
         </div>
 
@@ -210,29 +279,18 @@ export default function App() {
           <div className={`flex ${isSidebarCollapsed ? 'justify-center' : 'gap-2'} transition-all`}>
             <button
               onClick={exportData}
-              title="Export a JSON backup"
+              title="Export a JSON snapshot"
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-medium text-slate-300 bg-white/5 hover:bg-white/10 transition-colors"
             >
-              <Download size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Backup</span>}
+              <Download size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Export</span>}
             </button>
             <button
-              onClick={() => importRef.current?.click()}
-              title="Restore from a JSON backup"
+              onClick={() => void logout()}
+              title="Sign out"
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-medium text-slate-300 bg-white/5 hover:bg-white/10 transition-colors"
             >
-              <Upload size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Restore</span>}
+              <LogOut size={13} /> {!isSidebarCollapsed && <span className="hidden lg:inline">Sign out</span>}
             </button>
-            <input
-              ref={importRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void importData(file);
-                event.target.value = '';
-              }}
-            />
           </div>
           <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'} transition-all`}>
             <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 overflow-hidden ring-2 ring-transparent group-hover:ring-lime-500/50 transition-all flex-shrink-0">
@@ -240,21 +298,20 @@ export default function App() {
                 <img src={profile.logoUrl} alt="Profile" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-sm font-semibold text-slate-300">
-                  {(profile.name?.trim().charAt(0) || 'C').toUpperCase()}
+                  {(profile.name?.trim().charAt(0) || user.email.charAt(0) || 'C').toUpperCase()}
                 </div>
               )}
             </div>
             {!isSidebarCollapsed && (
               <div className="hidden lg:block text-sm overflow-hidden animate-in fade-in duration-300">
                 <p className="font-medium text-slate-200 truncate max-w-[120px] font-display tracking-wide">{profile.name || 'Your business'}</p>
-                <p className="text-amber-400/80 text-[10px] font-light tracking-wider uppercase">Local data only</p>
+                <p className="text-slate-500 text-[10px] font-light tracking-wider truncate max-w-[120px]">{user.email}</p>
               </div>
             )}
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         {renderContent()}
       </main>

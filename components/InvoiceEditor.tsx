@@ -16,7 +16,7 @@ interface InvoiceEditorProps {
   initialData: Invoice | null;
   onSave: (invoice: Invoice) => void;
   onCancel: () => void;
-  onAddClient?: (client: Client) => void;
+  onAddClient?: (client: Pick<Client, 'name' | 'email' | 'address'>) => Promise<Client>;
 }
 
 export default function InvoiceEditor({ profile, setProfile, clients, existingInvoices = [], initialData, onSave, onCancel, onAddClient }: InvoiceEditorProps) {
@@ -80,22 +80,28 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
   // Inline Client Creation State
   const [showAddClient, setShowAddClient] = useState(false);
   const [newClient, setNewClient] = useState<Partial<Client>>({ name: '', email: '', address: '' });
+  const [addingClient, setAddingClient] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
   const clientDropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSaveNewClient = () => {
-    if (!newClient.name || !onAddClient) return;
-    
-    const clientToAdd: Client = {
-      id: `client-${Date.now()}`,
-      name: newClient.name,
-      email: newClient.email || '',
-      address: newClient.address || ''
-    };
-    
-    onAddClient(clientToAdd);
-    setInvoiceData({ ...invoiceData, clientId: clientToAdd.id });
-    setShowAddClient(false);
-    setNewClient({ name: '', email: '', address: '' });
+  const handleSaveNewClient = async () => {
+    if (!newClient.name || !onAddClient || addingClient) return;
+    setAddingClient(true);
+    setClientError(null);
+    try {
+      const saved = await onAddClient({
+        name: newClient.name,
+        email: newClient.email || '',
+        address: newClient.address || '',
+      });
+      setInvoiceData((current) => ({ ...current, clientId: saved.id }));
+      setShowAddClient(false);
+      setNewClient({ name: '', email: '', address: '' });
+    } catch (err) {
+      setClientError(err instanceof Error ? err.message : 'Could not save the client.');
+    } finally {
+      setAddingClient(false);
+    }
   };
 
   // Toggles for optional fields
@@ -591,6 +597,7 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                           />
                           <input 
                             type="email" 
+                            required
                             placeholder="Email Address" 
                             value={newClient.email} 
                             onChange={(e) => setNewClient({...newClient, email: e.target.value})}
@@ -603,12 +610,15 @@ export default function InvoiceEditor({ profile, setProfile, clients, existingIn
                             className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-lime-500 outline-none resize-none"
                             rows={2}
                           />
+                          {clientError && (
+                            <p className="text-xs text-red-300" role="alert">{clientError}</p>
+                          )}
                           <button 
-                            onClick={handleSaveNewClient}
-                            disabled={!newClient.name}
+                            onClick={() => void handleSaveNewClient()}
+                            disabled={!newClient.name || !newClient.email || addingClient}
                             className="w-full bg-lime-500 hover:bg-lime-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-950 font-bold text-xs uppercase tracking-widest py-2 rounded-lg transition-colors"
                           >
-                            Save & Select Client
+                            {addingClient ? 'Saving…' : 'Save & Select Client'}
                           </button>
                         </div>
                       </div>

@@ -1,0 +1,23 @@
+databases:
+  - name: clarity-db
+    plan: starter
+    databaseName: clarity
+    user: clarity
+
+services:
+  - type: web
+    name: clarity-invoice
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: node server/index.mjs
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clarity-db
+          property: connectionString
+      - key: APP_URL
+        sync: false
+      - key: NODE_ENV
+        value: production
